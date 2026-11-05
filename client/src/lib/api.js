@@ -1,0 +1,101 @@
+function withQuery(path, params = {}) {
+  const q = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') q.set(key, value)
+  })
+  const qs = q.toString()
+  return `${path}${qs ? `?${qs}` : ''}`
+}
+
+function authHeaders() {
+  const token = localStorage.getItem('as_store_token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
+export async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
+  })
+
+  const text = await res.text()
+  let data = null
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = { message: text }
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.message || 'Request failed')
+  }
+  return data
+}
+
+export const authApi = {
+  login: (mobile, password) =>
+    api('/api/auth/login', { method: 'POST', body: JSON.stringify({ mobile, password }) }),
+  me: () => api('/api/auth/me'),
+}
+
+export const customersApi = {
+  list: () => api('/api/customers?includeInactive=true'),
+  create: (body) => api('/api/customers', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id, body) => api(`/api/customers/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+}
+
+export const productsApi = {
+  list: () => api('/api/products?includeInactive=true'),
+  create: (body) => api('/api/products', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id, body) => api(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  import: (items) => api('/api/products/import', { method: 'POST', body: JSON.stringify({ items }) }),
+}
+
+export const usersApi = {
+  list: () => api('/api/users'),
+  create: (body) => api('/api/users', { method: 'POST', body: JSON.stringify(body) }),
+  setActive: (id, isActive) =>
+    api(`/api/users/${id}/active`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
+}
+
+export const settingsApi = {
+  get: () => api('/api/settings'),
+}
+
+export const syncApi = {
+  flush: (mutations) =>
+    api('/api/sync/flush', { method: 'POST', body: JSON.stringify({ mutations }) }),
+}
+
+export const billsApi = {
+  list: (params = {}) => api(withQuery('/api/bills', params)),
+  get: (id) => api(`/api/bills/${id}`),
+  create: (body) => api('/api/bills', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id, body) => api(`/api/bills/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id) => api(`/api/bills/${id}`, { method: 'DELETE' }),
+  returnItems: (id, body) =>
+    api(`/api/bills/${id}/return`, { method: 'POST', body: JSON.stringify(body) }),
+}
+
+export const paymentsApi = {
+  collect: (body) => api('/api/payments/collect', { method: 'POST', body: JSON.stringify(body) }),
+  refund: (body) => api('/api/payments/refund', { method: 'POST', body: JSON.stringify(body) }),
+  applyAdvance: (customerId) =>
+    api(`/api/payments/apply-advance/${customerId}`, { method: 'POST', body: '{}' }),
+}
+
+export const ledgerApi = {
+  customer: (customerId) => api(`/api/ledger/customer/${customerId}`),
+}
+
+export const reportsApi = {
+  dashboard: () => api('/api/reports/dashboard'),
+  summary: (from, to) => api(withQuery('/api/reports/summary', { from, to })),
+  customers: (from, to) => api(withQuery('/api/reports/customers', { from, to })),
+}
