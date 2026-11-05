@@ -35,7 +35,9 @@ export async function api(path, options = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(data?.message || 'Request failed')
+    const error = new Error(data?.message || 'Request failed')
+    error.status = res.status
+    throw error
   }
   return data
 }

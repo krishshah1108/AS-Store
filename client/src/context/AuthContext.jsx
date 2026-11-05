@@ -2,23 +2,52 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { authApi } from '../lib/api'
 
 const AuthContext = createContext(null)
+const TOKEN_KEY = 'as_store_token'
+const USER_KEY = 'as_store_user'
+
+function readStoredUser() {
+  try {
+    const raw = localStorage.getItem(USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveSession(token, user) {
+  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
+}
+
+function clearSession() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(() => {
+    if (!localStorage.getItem(TOKEN_KEY)) return null
+    return readStoredUser()
+  })
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY) && !readStoredUser()))
 
   useEffect(() => {
-    const token = localStorage.getItem('as_store_token')
+    const token = localStorage.getItem(TOKEN_KEY)
     if (!token) {
       setLoading(false)
       return
     }
     authApi
       .me()
-      .then((res) => setUser(res.user))
-      .catch(() => {
-        localStorage.removeItem('as_store_token')
-        setUser(null)
+      .then((res) => {
+        localStorage.setItem(USER_KEY, JSON.stringify(res.user))
+        setUser(res.user)
+      })
+      .catch((err) => {
+        if (err.status === 401 || err.status === 403) {
+          clearSession()
+          setUser(null)
+        }
       })
       .finally(() => setLoading(false))
   }, [])
@@ -26,13 +55,13 @@ export function AuthProvider({ children }) {
   async function login(mobile, password) {
     const res = await authApi.login(mobile, password)
     await rememberBrowserLogin(mobile, password, res.user?.name)
-    localStorage.setItem('as_store_token', res.token)
+    saveSession(res.token, res.user)
     setUser(res.user)
     return res.user
   }
 
   function logout() {
-    localStorage.removeItem('as_store_token')
+    clearSession()
     setUser(null)
   }
 

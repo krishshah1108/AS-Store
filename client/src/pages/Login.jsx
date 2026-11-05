@@ -1,19 +1,16 @@
 import { LockKey, Phone, SignIn } from '@phosphor-icons/react'
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
 import Logo from '../components/Logo'
 import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
 export default function Login() {
-  const { user, login, loading } = useAuth()
+  const { login } = useAuth()
   const toast = useToast()
   const [mobile, setMobile] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-
-  if (!loading && user) return <Navigate to="/" replace />
 
   async function onSubmit(e) {
     e.preventDefault()

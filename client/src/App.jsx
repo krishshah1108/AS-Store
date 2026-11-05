@@ -19,25 +19,21 @@ function LoadingScreen() {
   )
 }
 
-function Protected({ children }) {
+export default function App() {
   const { user, loading } = useAuth()
   if (loading) return <LoadingScreen />
-  if (!user) return <Navigate to="/login" replace />
-  return children
-}
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    )
+  }
 
-export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/"
-        element={
-          <Protected>
-            <Layout />
-          </Protected>
-        }
-      >
+      <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="bills" element={<Bills />} />
         <Route path="bills/new" element={<BillForm />} />

@@ -120,9 +120,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
   margin: 0;
   min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
+.hello-short,
+.date-short { display: none; }
 .topbar-hello {
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -178,16 +178,6 @@ button, input, textarea, select { font: inherit; color: inherit; }
   gap: var(--space-3);
 }
 
-.sidebar-user { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
-
-.conn-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  flex-shrink: 0;
-}
-.conn-dot.up { background: var(--color-success); }
 .pending-note {
   display: inline-flex;
   align-items: center;
@@ -726,8 +716,9 @@ input:disabled, button:disabled { opacity: 0.55; cursor: not-allowed; }
 .toast-stack {
   position: fixed;
   z-index: 90;
-  right: var(--space-4);
-  bottom: calc(var(--nav-h) + var(--space-4));
+  top: calc(12px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -758,7 +749,7 @@ input:disabled, button:disabled { opacity: 0.55; cursor: not-allowed; }
 .toast.error { border-color: var(--color-error); background: var(--color-error-soft); }
 .toast.info { border-color: var(--color-primary); background: var(--color-primary-soft); }
 
-.tag, .user-chip {
+.tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -994,9 +985,13 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 }
 
 @media (max-width: 1023px) {
-  .topbar .logo-img { max-width: 96px; }
+  .topbar { gap: 8px; }
+  .topbar .logo-img { max-width: 64px; max-height: 36px; }
   .topbar-hello { font-size: 0.92rem; }
-  .topbar-date { font-size: 0.68rem; }
+  .topbar-date { font-size: 0.78rem; }
+  .hello-full, .date-full { display: none; }
+  .hello-short, .date-short { display: inline; }
+  .toast-stack { top: calc(var(--header-h) + 8px); }
 }
 
 @media (min-width: 768px) {
@@ -1065,10 +1060,9 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   .profile-card { padding: 4px 14px 4px 4px; }
   .profile-copy { display: grid; }
   .profile-logout { display: inline-flex; }
-  .sidebar-user { display: none; }
   .main { padding: calc(var(--header-h) + var(--space-5)) var(--space-6) var(--space-7); }
   .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .toast-stack { bottom: var(--space-5); }
+  .toast-stack { top: calc(var(--header-h) + var(--space-3)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

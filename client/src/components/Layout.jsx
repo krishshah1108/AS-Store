@@ -21,19 +21,29 @@ import { useAuth } from '../context/AuthContext'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
-function greetingFor(name) {
+function greetingFor(name, compact) {
   const hour = new Date().getHours()
-  const hello = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const hello = compact
+    ? hour < 12
+      ? 'Morning'
+      : hour < 17
+        ? 'Afternoon'
+        : 'Evening'
+    : hour < 12
+      ? 'Good morning'
+      : hour < 17
+        ? 'Good afternoon'
+        : 'Good evening'
   const first = name?.trim().split(/\s+/)[0]
   return first ? `${hello}, ${first}` : hello
 }
 
-function todayLabel() {
+function todayLabel(compact) {
   return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
+    weekday: compact ? 'short' : 'long',
     day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    month: compact ? 'short' : 'long',
+    year: compact ? undefined : 'numeric',
   }).format(new Date())
 }
 
@@ -123,20 +133,6 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <span
-              className={`conn-dot${online ? ' up' : ''}`}
-              title={connectionTitle}
-              aria-label={connectionTitle}
-            />
-            <span className="user-chip">{user?.name}</span>
-            {pendingCount > 0 && (
-              <span className="pending-note" title={`${pendingCount} waiting to sync`}>
-                <CloudArrowUp size={14} weight="bold" />
-                {pendingCount}
-              </span>
-            )}
-          </div>
           <button type="button" className="btn ghost logout-btn" onClick={() => setConfirmLogout(true)}>
             <SignOut size={16} weight="bold" />
             Logout
@@ -165,10 +161,14 @@ export default function Layout() {
           </button>
           <Logo />
           <div className="topbar-greeting">
-            <p className="topbar-hello">{greetingFor(user?.name)}</p>
+            <p className="topbar-hello">
+              <span className="hello-full">{greetingFor(user?.name)}</span>
+              <span className="hello-short">{greetingFor(user?.name, true)}</span>
+            </p>
             <p className="topbar-date">
               <CalendarBlank size={14} weight="bold" />
-              <span>{todayLabel()}</span>
+              <span className="date-full">{todayLabel()}</span>
+              <span className="date-short">{todayLabel(true)}</span>
             </p>
           </div>
           <div className="profile-menu">

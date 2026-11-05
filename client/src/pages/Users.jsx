@@ -43,12 +43,13 @@ export default function Users() {
     e.preventDefault()
     setSaving(true)
     try {
-      await usersApi.create(form)
+      const created = await usersApi.create(form)
+      const name = created?.name || form.name
+      toast.success(name ? `${name} added` : 'User created')
       setForm({ name: '', mobile: '', password: '', role: 'employee' })
       setFormOpen(false)
       await load()
       bump()
-      toast.success('User created')
     } catch (err) {
       toast.error(err.message)
     } finally {
