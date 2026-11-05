@@ -1,3 +1,5 @@
+export const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 function withQuery(path, params = {}) {
   const q = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -16,7 +18,7 @@ function authHeaders() {
 }
 
 export async function api(path, options = {}) {
-  const res = await fetch(path, {
+  const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       ...authHeaders(),

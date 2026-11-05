@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
-import { syncApi } from '../lib/api'
+import { API_URL, syncApi } from '../lib/api'
 import { clearOutboxIds, getOutbox } from '../lib/storage'
 import { useAuth } from './AuthContext'
 
@@ -29,7 +29,7 @@ export function SyncProvider({ children }) {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 4000)
     try {
-      const res = await fetch('/api/health', {
+      const res = await fetch(`${API_URL}/api/health`, {
         signal: controller.signal,
         cache: 'no-store',
       })
@@ -92,7 +92,7 @@ export function SyncProvider({ children }) {
   useEffect(() => {
     if (!user) return undefined
 
-    const socket = io({ path: '/socket.io' })
+    const socket = io(API_URL || undefined, { path: '/socket.io' })
 
     const onChange = () => {
       bump()
