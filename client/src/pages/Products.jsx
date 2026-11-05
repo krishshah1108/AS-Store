@@ -1,5 +1,6 @@
 import { FileXls, MagnifyingGlass, PencilSimple, Plus } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
+import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
 import ProductImport from '../components/ProductImport'
 import StatusSwitch from '../components/StatusSwitch'
@@ -14,7 +15,8 @@ const emptyForm = { name: '', unit: 'pcs', salePrice: '' }
 export default function Products() {
   const { refreshKey, online, refreshPending, bump } = useSync()
   const toast = useToast()
-  const [rows, setRows] = useState([])
+  const [rows, setRows] = useState(() => cacheGet('products') || [])
+  const [ready, setReady] = useState(() => (cacheGet('products') || []).length > 0)
   const [q, setQ] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [editing, setEditing] = useState(null)
@@ -30,6 +32,8 @@ export default function Products() {
       setRows(data)
     } catch {
       setRows(cacheGet('products') || [])
+    } finally {
+      setReady(true)
     }
   }
 
@@ -46,6 +50,8 @@ export default function Products() {
   useEffect(() => {
     setPage(1)
   }, [q])
+
+  if (!ready) return <LogoLoader page />
 
   const pageSize = 8
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))

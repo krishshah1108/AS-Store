@@ -1,6 +1,7 @@
 import { MagnifyingGlass, Plus } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LogoLoader from '../components/LogoLoader'
 import { billsApi } from '../lib/api'
 import { formatDate, formatMoney } from '../lib/billShare'
 import { useSync } from '../context/SyncContext'
@@ -11,13 +12,27 @@ export default function Bills() {
   const toast = useToast()
   const [rows, setRows] = useState([])
   const [q, setQ] = useState('')
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    let active = true
     billsApi
       .list({ q, limit: 100 })
-      .then(setRows)
-      .catch((err) => toast.error(err.message))
+      .then((data) => {
+        if (active) setRows(data)
+      })
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [refreshKey, q, toast])
+
+  if (!ready) return <LogoLoader page />
 
   return (
     <div className="page">

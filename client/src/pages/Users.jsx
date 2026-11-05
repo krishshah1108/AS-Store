@@ -1,6 +1,7 @@
 import { LockKey, Phone, Plus } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
 import PasswordInput from '../components/PasswordInput'
 import StatusSwitch from '../components/StatusSwitch'
@@ -14,25 +15,38 @@ export default function Users() {
   const { refreshKey, bump } = useSync()
   const toast = useToast()
   const [rows, setRows] = useState([])
+  const [ready, setReady] = useState(false)
   const [form, setForm] = useState({ name: '', mobile: '', password: '', role: 'employee' })
   const [formOpen, setFormOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [page, setPage] = useState(1)
 
   useEffect(() => {
-    if (!isOwner) return
+    if (!isOwner) return undefined
+    let active = true
     usersApi
       .list()
-      .then(setRows)
-      .catch((err) => toast.error(err.message))
+      .then((data) => {
+        if (active) setRows(data)
+      })
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [refreshKey, isOwner, toast])
+
+  if (!isOwner) return <Navigate to="/" replace />
+  if (!ready) return <LogoLoader page />
 
   const pageSize = 8
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
   const currentPage = Math.min(page, pageCount)
   const visible = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-
-  if (!isOwner) return <Navigate to="/" replace />
 
   async function load() {
     const data = await usersApi.list()

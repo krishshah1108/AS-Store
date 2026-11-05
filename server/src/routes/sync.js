@@ -8,10 +8,6 @@ const { emitChange } = require('../utils/socket');
 const router = express.Router();
 router.use(requireAuth);
 
-/**
- * Flush offline outbox mutations. Last-write-wins; previous server state audited.
- * Body: { mutations: [{ id, entity, op, payload, clientUpdatedAt }] }
- */
 router.post('/flush', async (req, res) => {
   const mutations = Array.isArray(req.body.mutations) ? req.body.mutations : [];
   const results = [];
@@ -82,7 +78,7 @@ async function applyCustomerMutation(m, userId) {
       before,
       after: customer.toObject(),
       performedBy: userId,
-      meta: { sync: true, lww: true },
+      meta: { sync: true },
     });
     emitChange();
     return { id: m.id, ok: true, serverId: customer._id };
@@ -138,7 +134,7 @@ async function applyProductMutation(m, userId) {
       before,
       after: product.toObject(),
       performedBy: userId,
-      meta: { sync: true, lww: true },
+      meta: { sync: true },
     });
     emitChange();
     return { id: m.id, ok: true, serverId: product._id };

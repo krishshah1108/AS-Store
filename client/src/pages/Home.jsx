@@ -7,6 +7,7 @@ import {
 } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LogoLoader from '../components/LogoLoader'
 import { reportsApi } from '../lib/api'
 import { formatMoney } from '../lib/billShare'
 import { useSync } from '../context/SyncContext'
@@ -16,17 +17,31 @@ export default function Home() {
   const { refreshKey } = useSync()
   const toast = useToast()
   const [dash, setDash] = useState(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    let active = true
     reportsApi
       .dashboard()
-      .then(setDash)
-      .catch((err) => toast.error(err.message))
+      .then((data) => {
+        if (active) setDash(data)
+      })
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [refreshKey, toast])
+
+  if (!ready && !dash) return <LogoLoader page />
 
   return (
     <div className="page">
-      <header className="page-header dash-header">
+      <header className="page-header">
         <div>
           <h1>Today’s accounts</h1>
           <p className="muted">

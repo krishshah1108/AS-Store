@@ -1,5 +1,6 @@
 import { DownloadSimple, Printer } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
+import LogoLoader from '../components/LogoLoader'
 import { reportsApi } from '../lib/api'
 import { formatDate, formatMoney, todayInput } from '../lib/billShare'
 import { useSync } from '../context/SyncContext'
@@ -23,6 +24,7 @@ export default function Reports() {
   const [to, setTo] = useState(todayInput())
   const [summary, setSummary] = useState(null)
   const [customerRows, setCustomerRows] = useState([])
+  const [ready, setReady] = useState(false)
 
   async function load() {
     try {
@@ -34,12 +36,16 @@ export default function Reports() {
       setCustomerRows(c)
     } catch (err) {
       toast.error(err.message)
+    } finally {
+      setReady(true)
     }
   }
 
   useEffect(() => {
     load()
   }, [from, to, refreshKey])
+
+  if (!ready && !summary) return <LogoLoader page />
 
   function exportSummary() {
     if (!summary) return

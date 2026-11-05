@@ -5,6 +5,7 @@ import {
 } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import LogoLoader from '../components/LogoLoader'
 import { customersApi, ledgerApi, paymentsApi } from '../lib/api'
 import { formatDate, formatMoney, todayInput } from '../lib/billShare'
 import { useSync } from '../context/SyncContext'
@@ -17,6 +18,8 @@ export default function CustomerLedger() {
   const toast = useToast()
 
   const [customers, setCustomers] = useState([])
+  const [customersReady, setCustomersReady] = useState(false)
+  const [ledgerLoading, setLedgerLoading] = useState(Boolean(customerId))
   const [q, setQ] = useState('')
   const [selectedId, setSelectedId] = useState(customerId || '')
   const [ledger, setLedger] = useState(null)
@@ -37,21 +40,45 @@ export default function CustomerLedger() {
   const [fromAdvance, setFromAdvance] = useState(true)
 
   useEffect(() => {
+    let active = true
     customersApi
       .list()
-      .then((rows) => setCustomers(rows.filter((c) => c.isActive !== false)))
-      .catch((err) => toast.error(err.message))
+      .then((rows) => {
+        if (active) setCustomers(rows.filter((c) => c.isActive !== false))
+      })
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setCustomersReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [refreshKey, toast])
 
   useEffect(() => {
     if (!selectedId) {
       setLedger(null)
-      return
+      setLedgerLoading(false)
+      return undefined
     }
+    let active = true
+    setLedgerLoading(true)
     ledgerApi
       .customer(selectedId)
-      .then(setLedger)
-      .catch((err) => toast.error(err.message))
+      .then((data) => {
+        if (active) setLedger(data)
+      })
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setLedgerLoading(false)
+      })
+    return () => {
+      active = false
+    }
   }, [selectedId, refreshKey, toast])
 
   useEffect(() => {
@@ -152,6 +179,8 @@ export default function CustomerLedger() {
 
   const customer = ledger?.customer
 
+  if (!customersReady) return <LogoLoader page />
+
   return (
     <div className="page">
       <header className="page-header">
@@ -190,7 +219,9 @@ export default function CustomerLedger() {
         </div>
 
         <div className="panel">
-          {!customer ? (
+          {ledgerLoading ? (
+            <LogoLoader panel />
+          ) : !customer ? (
             <p className="muted">Select a customer to view ledger.</p>
           ) : (
             <>

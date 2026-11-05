@@ -17,7 +17,7 @@ function authHeaders() {
   }
 }
 
-export async function api(path, options = {}) {
+async function api(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {

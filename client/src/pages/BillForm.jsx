@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import LogoLoader from '../components/LogoLoader'
 import SearchSelect from '../components/SearchSelect'
 import { billsApi, customersApi, productsApi, settingsApi } from '../lib/api'
 import { formatDate, formatMoney, openWhatsAppShare, todayInput } from '../lib/billShare'
@@ -44,24 +45,42 @@ export default function BillForm() {
   const [reason, setReason] = useState('')
   const [billMeta, setBillMeta] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [catalogReady, setCatalogReady] = useState(false)
+  const [billReady, setBillReady] = useState(isNew)
   const [returnQty, setReturnQty] = useState({})
   const locked = billMeta?.status === 'cancelled' || billMeta?.status === 'returned'
 
   useEffect(() => {
+    let active = true
     Promise.all([customersApi.list(), productsApi.list(), settingsApi.get()])
       .then(([c, p, s]) => {
+        if (!active) return
         setCustomers(c.filter((x) => x.isActive !== false))
         setProducts(p.filter((x) => x.isActive !== false))
         setSettings(s)
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setCatalogReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [toast])
 
   useEffect(() => {
-    if (isNew) return
+    if (isNew) {
+      setBillReady(true)
+      return undefined
+    }
+    let active = true
+    setBillReady(false)
     billsApi
       .get(id)
       .then((bill) => {
+        if (!active) return
         setBillMeta(bill)
         setCustomerId(bill.customerId?._id || bill.customerId)
         setBillDate(new Date(bill.billDate).toISOString().slice(0, 10))
@@ -83,7 +102,15 @@ export default function BillForm() {
           toast.info(detail ? `This bill is ${bill.status}. ${detail}` : `This bill is ${bill.status}.`)
         }
       })
-      .catch((err) => toast.error(err.message))
+      .catch((err) => {
+        if (active) toast.error(err.message)
+      })
+      .finally(() => {
+        if (active) setBillReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [id, isNew, toast])
 
   const subtotal = useMemo(
@@ -267,6 +294,8 @@ export default function BillForm() {
       setSaving(false)
     }
   }
+
+  if (!catalogReady || !billReady) return <LogoLoader page />
 
   return (
     <div className="page bill-page">

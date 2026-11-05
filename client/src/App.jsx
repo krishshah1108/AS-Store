@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
+import LogoLoader from './components/LogoLoader'
 import { useAuth } from './context/AuthContext'
 import BillForm from './pages/BillForm'
 import Bills from './pages/Bills'
@@ -11,17 +12,9 @@ import Products from './pages/Products'
 import Reports from './pages/Reports'
 import Users from './pages/Users'
 
-function LoadingScreen() {
-  return (
-    <div className="loading-screen" role="status" aria-live="polite" aria-label="Loading">
-      <img className="loading-logo" src="/as-logo.png" alt="" />
-    </div>
-  )
-}
-
 export default function App() {
   const { user, loading } = useAuth()
-  if (loading) return <LoadingScreen />
+  if (loading) return <LogoLoader />
   if (!user) {
     return (
       <Routes>

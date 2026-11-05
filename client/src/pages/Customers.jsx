@@ -1,6 +1,7 @@
 import { MagnifyingGlass, Notebook, PencilSimple, Plus } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
 import StatusSwitch from '../components/StatusSwitch'
 import { customersApi } from '../lib/api'
@@ -14,7 +15,8 @@ const emptyForm = { name: '', mobile: '', address: '', notes: '' }
 export default function Customers() {
   const { refreshKey, online, refreshPending, bump } = useSync()
   const toast = useToast()
-  const [rows, setRows] = useState([])
+  const [rows, setRows] = useState(() => cacheGet('customers') || [])
+  const [ready, setReady] = useState(() => (cacheGet('customers') || []).length > 0)
   const [q, setQ] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [editing, setEditing] = useState(null)
@@ -29,6 +31,8 @@ export default function Customers() {
       setRows(data)
     } catch {
       setRows(cacheGet('customers') || [])
+    } finally {
+      setReady(true)
     }
   }
 
@@ -50,6 +54,8 @@ export default function Customers() {
   useEffect(() => {
     setPage(1)
   }, [q])
+
+  if (!ready) return <LogoLoader page />
 
   const pageSize = 8
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))

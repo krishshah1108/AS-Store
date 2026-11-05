@@ -23,17 +23,8 @@ import { useToast } from '../context/ToastContext'
 
 function greetingFor(name, compact) {
   const hour = new Date().getHours()
-  const hello = compact
-    ? hour < 12
-      ? 'Morning'
-      : hour < 17
-        ? 'Afternoon'
-        : 'Evening'
-    : hour < 12
-      ? 'Good morning'
-      : hour < 17
-        ? 'Good afternoon'
-        : 'Good evening'
+  const part = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
+  const hello = compact ? part.charAt(0).toUpperCase() + part.slice(1) : `Good ${part}`
   const first = name?.trim().split(/\s+/)[0]
   return first ? `${hello}, ${first}` : hello
 }

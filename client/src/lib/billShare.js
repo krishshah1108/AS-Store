@@ -18,7 +18,7 @@ export function formatDate(value) {
   }).format(date)
 }
 
-export function buildBillText(bill, settings = {}) {
+function buildBillText(bill, settings = {}) {
   const customer = bill.customerId || {}
   const lines = [
     settings.shopName ? `*${settings.shopName}*` : null,
