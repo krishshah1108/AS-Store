@@ -15,7 +15,7 @@ import {
   WifiSlash,
   X,
 } from '@phosphor-icons/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Logo from './Logo'
 import { useAuth } from '../context/AuthContext'
@@ -46,14 +46,40 @@ const links = [
     label: 'Bills',
     icon: Receipt,
     match: (path) => path === '/bills' || (path.startsWith('/bills/') && path !== '/bills/new'),
+    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus }],
   },
-  { to: '/bills/new', label: 'Add bill', icon: Plus },
   { to: '/ledger', label: 'Ledger', icon: Notebook },
   { to: '/reports', label: 'Reports', icon: ChartLine },
-  { to: '/customers', label: 'Customers', icon: UsersThree },
-  { to: '/products', label: 'Products', icon: Package },
+  {
+    to: '/customers',
+    label: 'Customers',
+    end: true,
+    icon: UsersThree,
+    children: [{ to: '/customers/new', label: 'Add customer', icon: Plus }],
+  },
+  {
+    to: '/products',
+    label: 'Products',
+    end: true,
+    icon: Package,
+    children: [{ to: '/products/new', label: 'Add product', icon: Plus }],
+  },
   { to: '/users', label: 'Users', ownerOnly: true, icon: UsersIcon },
 ]
+
+function NavItem({ item, pathname }) {
+  const Icon = item.icon
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      className={({ isActive }) => ((item.match ? item.match(pathname) : isActive) ? 'active' : '')}
+    >
+      <Icon size={20} weight="regular" />
+      {item.label}
+    </NavLink>
+  )
+}
 
 export default function Layout() {
   const { user, logout, isOwner } = useAuth()
@@ -73,8 +99,11 @@ export default function Layout() {
     return () => media.removeEventListener('change', onChange)
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSidebarOpen(false)
+    window.scrollTo(0, 0)
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
   }, [location.pathname])
 
   useEffect(() => {
@@ -114,20 +143,18 @@ export default function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          {navLinks.map((l) => {
-            const Icon = l.icon
-            return (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.end}
-                className={({ isActive }) => ((l.match ? l.match(location.pathname) : isActive) ? 'active' : '')}
-              >
-                <Icon size={20} weight="regular" />
-                {l.label}
-              </NavLink>
-            )
-          })}
+          {navLinks.map((l) => (
+            <div className="nav-group" key={l.to}>
+              <NavItem item={l} pathname={location.pathname} />
+              {l.children?.length > 0 && (
+                <div className="nav-children">
+                  {l.children.map((child) => (
+                    <NavItem key={child.to} item={child} pathname={location.pathname} />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">

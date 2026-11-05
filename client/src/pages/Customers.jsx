@@ -13,7 +13,7 @@ import { useToast } from '../context/ToastContext'
 const emptyForm = { name: '', mobile: '', address: '', notes: '' }
 
 export default function Customers() {
-  const { refreshKey, online, refreshPending, bump } = useSync()
+  const { refreshKey, online, refreshPending } = useSync()
   const toast = useToast()
   const [rows, setRows] = useState(() => cacheGet('customers') || [])
   const [ready, setReady] = useState(() => (cacheGet('customers') || []).length > 0)
@@ -73,12 +73,6 @@ export default function Customers() {
     })
   }
 
-  function openCreate() {
-    setEditing(null)
-    setForm(emptyForm)
-    setFormOpen(true)
-  }
-
   function resetForm() {
     setEditing(null)
     setForm(emptyForm)
@@ -95,53 +89,26 @@ export default function Customers() {
 
     try {
       if (!online) {
-        if (editing) {
-          const next = rows.map((r) =>
-            r._id === editing._id ? { ...r, ...payload, _pending: true } : r
-          )
-          setRows(next)
-          cacheSet('customers', next)
-          enqueueMutation({
-            id: newLocalId(),
-            entity: 'customer',
-            op: 'update',
-            payload: { ...payload, _id: editing._id },
-            clientUpdatedAt: payload.updatedAtClient,
-          })
-        } else {
-          const local = {
-            _id: newLocalId(),
-            ...payload,
-            isActive: true,
-            balance: 0,
-            _pending: true,
-          }
-          const next = [...rows, local]
-          setRows(next)
-          cacheSet('customers', next)
-          enqueueMutation({
-            id: local._id,
-            entity: 'customer',
-            op: 'create',
-            payload: local,
-            clientUpdatedAt: payload.updatedAtClient,
-          })
-        }
+        const next = rows.map((r) =>
+          r._id === editing._id ? { ...r, ...payload, _pending: true } : r
+        )
+        setRows(next)
+        cacheSet('customers', next)
+        enqueueMutation({
+          id: newLocalId(),
+          entity: 'customer',
+          op: 'update',
+          payload: { ...payload, _id: editing._id },
+          clientUpdatedAt: payload.updatedAtClient,
+        })
         refreshPending()
         resetForm()
         toast.info('Saved on this device. It will sync when you are back online.')
-      } else if (editing) {
+      } else {
         await customersApi.update(editing._id, payload)
         resetForm()
         await load()
-        bump()
         toast.success('Customer updated')
-      } else {
-        await customersApi.create(payload)
-        resetForm()
-        await load()
-        bump()
-        toast.success('Customer added')
       }
     } catch (err) {
       toast.error(err.message || 'Save failed')
@@ -193,15 +160,15 @@ export default function Customers() {
           <h1>Customers</h1>
           <p className="muted">Search, add, and edit customer masters.</p>
         </div>
-        <button type="button" className="btn primary" onClick={openCreate}>
+        <Link to="/customers/new" className="btn primary">
           <Plus size={16} weight="bold" />
-          New customer
-        </button>
+          Add customer
+        </Link>
       </header>
 
       {formOpen && (
         <form className="panel form editor" onSubmit={onSubmit}>
-          <h2>{editing ? 'Edit customer' : 'Add customer'}</h2>
+          <h2>Edit customer</h2>
           <label>
             Name *
             <input
@@ -245,8 +212,8 @@ export default function Customers() {
           </label>
           <div className="row-actions">
             <button className="btn primary" disabled={saving} type="submit">
-              {editing ? <PencilSimple size={16} weight="bold" /> : <Plus size={16} weight="bold" />}
-              {saving ? 'Saving…' : editing ? 'Update' : 'Add'}
+              <PencilSimple size={16} weight="bold" />
+              {saving ? 'Saving…' : 'Update'}
             </button>
             <button type="button" className="btn ghost" onClick={resetForm}>
               Cancel

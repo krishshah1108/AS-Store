@@ -12,7 +12,7 @@ import { useToast } from '../context/ToastContext'
 
 export default function Users() {
   const { isOwner } = useAuth()
-  const { refreshKey, bump } = useSync()
+  const { refreshKey } = useSync()
   const toast = useToast()
   const [rows, setRows] = useState([])
   const [ready, setReady] = useState(false)
@@ -63,7 +63,6 @@ export default function Users() {
       setForm({ name: '', mobile: '', password: '', role: 'employee' })
       setFormOpen(false)
       await load()
-      bump()
     } catch (err) {
       toast.error(err.message)
     } finally {

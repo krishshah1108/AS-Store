@@ -1,5 +1,6 @@
 import { FileXls, MagnifyingGlass, PencilSimple, Plus } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
 import ProductImport from '../components/ProductImport'
@@ -13,7 +14,7 @@ import { useToast } from '../context/ToastContext'
 const emptyForm = { name: '', unit: 'pcs', salePrice: '' }
 
 export default function Products() {
-  const { refreshKey, online, refreshPending, bump } = useSync()
+  const { refreshKey, online, refreshPending } = useSync()
   const toast = useToast()
   const [rows, setRows] = useState(() => cacheGet('products') || [])
   const [ready, setReady] = useState(() => (cacheGet('products') || []).length > 0)
@@ -61,18 +62,12 @@ export default function Products() {
   function startEdit(row) {
     setEditing(row)
     setFormOpen(true)
+    setImportOpen(false)
     setForm({
       name: row.name || '',
       unit: row.unit || 'pcs',
       salePrice: String(row.salePrice ?? ''),
     })
-  }
-
-  function openCreate() {
-    setEditing(null)
-    setForm(emptyForm)
-    setFormOpen(true)
-    setImportOpen(false)
   }
 
   function resetForm() {
@@ -93,47 +88,26 @@ export default function Products() {
 
     try {
       if (!online) {
-        if (editing) {
-          const next = rows.map((r) =>
-            r._id === editing._id ? { ...r, ...payload, _pending: true } : r
-          )
-          setRows(next)
-          cacheSet('products', next)
-          enqueueMutation({
-            id: newLocalId(),
-            entity: 'product',
-            op: 'update',
-            payload: { ...payload, _id: editing._id },
-            clientUpdatedAt: payload.updatedAtClient,
-          })
-        } else {
-          const local = { _id: newLocalId(), ...payload, isActive: true, _pending: true }
-          const next = [...rows, local]
-          setRows(next)
-          cacheSet('products', next)
-          enqueueMutation({
-            id: local._id,
-            entity: 'product',
-            op: 'create',
-            payload: local,
-            clientUpdatedAt: payload.updatedAtClient,
-          })
-        }
+        const next = rows.map((r) =>
+          r._id === editing._id ? { ...r, ...payload, _pending: true } : r
+        )
+        setRows(next)
+        cacheSet('products', next)
+        enqueueMutation({
+          id: newLocalId(),
+          entity: 'product',
+          op: 'update',
+          payload: { ...payload, _id: editing._id },
+          clientUpdatedAt: payload.updatedAtClient,
+        })
         refreshPending()
         resetForm()
         toast.info('Saved on this device. It will sync when you are back online.')
-      } else if (editing) {
+      } else {
         await productsApi.update(editing._id, payload)
         resetForm()
         await load()
-        bump()
         toast.success('Product updated')
-      } else {
-        await productsApi.create(payload)
-        resetForm()
-        await load()
-        bump()
-        toast.success('Product added')
       }
     } catch (err) {
       toast.error(err.message || 'Save failed')
@@ -196,10 +170,10 @@ export default function Products() {
             <FileXls size={16} weight="bold" />
             Import Excel
           </button>
-          <button type="button" className="btn primary" onClick={openCreate}>
+          <Link to="/products/new" className="btn primary">
             <Plus size={16} weight="bold" />
-            New product
-          </button>
+            Add product
+          </Link>
         </div>
       </header>
 
@@ -210,7 +184,6 @@ export default function Products() {
           onDone={() => {
             setImportOpen(false)
             load()
-            bump()
           }}
           onClose={() => setImportOpen(false)}
         />
@@ -218,7 +191,7 @@ export default function Products() {
 
       {formOpen && (
         <form className="panel form editor" onSubmit={onSubmit}>
-          <h2>{editing ? 'Edit product' : 'Add product'}</h2>
+          <h2>Edit product</h2>
           <label>
             Name *
             <input
@@ -250,8 +223,8 @@ export default function Products() {
           </label>
           <div className="row-actions">
             <button className="btn primary" disabled={saving} type="submit">
-              {editing ? <PencilSimple size={16} weight="bold" /> : <Plus size={16} weight="bold" />}
-              {saving ? 'Saving…' : editing ? 'Update' : 'Add'}
+              <PencilSimple size={16} weight="bold" />
+              {saving ? 'Saving…' : 'Update'}
             </button>
             <button type="button" className="btn ghost" onClick={resetForm}>
               Cancel
