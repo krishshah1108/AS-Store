@@ -41,23 +41,21 @@ function todayLabel(compact) {
 }
 
 const links = [
-  { to: '/', label: 'Home', end: true, icon: House, mobile: 'bar' },
+  { to: '/', label: 'Home', end: true, icon: House },
   {
     to: '/bills',
     label: 'Bills',
     icon: Receipt,
-    mobile: 'bar',
     match: (path) => path === '/bills' || (path.startsWith('/bills/') && path !== '/bills/new'),
-    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus, mobile: 'bar', accent: true }],
+    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus, accent: true }],
   },
-  { to: '/ledger', label: 'Ledger', icon: Notebook, mobile: 'bar' },
-  { to: '/reports', label: 'Reports', icon: ChartLine, mobile: 'bar' },
+  { to: '/ledger', label: 'Ledger', icon: Notebook },
+  { to: '/reports', label: 'Reports', icon: ChartLine },
   {
     to: '/customers',
     label: 'Customers',
     end: true,
     icon: UsersThree,
-    mobile: 'menu',
     children: [{ to: '/customers/new', label: 'Add customer', icon: Plus }],
   },
   {
@@ -65,26 +63,23 @@ const links = [
     label: 'Products',
     end: true,
     icon: Package,
-    mobile: 'menu',
     children: [{ to: '/products/new', label: 'Add product', icon: Plus }],
   },
-  { to: '/users', label: 'Users', ownerOnly: true, icon: UsersIcon, mobile: 'menu' },
+  { to: '/users', label: 'Users', ownerOnly: true, icon: UsersIcon },
 ]
 
-function barLinks(items) {
-  const out = []
+function barItem(items, to) {
   for (const item of items) {
-    if (item.mobile === 'bar') out.push(item)
-    for (const child of item.children || []) {
-      if (child.mobile === 'bar') out.push(child)
-    }
+    if (item.to === to) return item
+    const child = item.children?.find((entry) => entry.to === to)
+    if (child) return child
   }
-  return out
+  return null
 }
 
 function pathInGroup(item, pathname) {
-  if (pathname === item.to || item.match?.(pathname)) return true
-  return (item.children || []).some((child) => pathname === child.to || child.match?.(pathname))
+  if (item.match ? item.match(pathname) : pathname === item.to) return true
+  return (item.children || []).some((child) => pathname === child.to)
 }
 
 function NavGroup({ item, pathname }) {
@@ -153,8 +148,6 @@ export default function Layout() {
   useLayoutEffect(() => {
     setSidebarOpen(false)
     window.scrollTo(0, 0)
-    document.documentElement.scrollTop = 0
-    document.body.scrollTop = 0
   }, [location.pathname])
 
   useEffect(() => {
@@ -177,8 +170,7 @@ export default function Layout() {
   }
 
   const navLinks = links.filter((l) => !l.ownerOnly || isOwner)
-  const menuLinks = isDesktop ? navLinks : navLinks.filter((l) => l.mobile === 'menu')
-  const mobileBar = barLinks(navLinks)
+  const mobileBar = ['/', '/products', '/bills/new', '/ledger', '/reports'].map((to) => barItem(navLinks, to))
 
   return (
     <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -196,8 +188,8 @@ export default function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          {menuLinks.map((l) =>
-            l.children?.length ? (
+          {navLinks.map((l) =>
+            isDesktop && l.children?.length ? (
               <NavGroup key={l.to} item={l} pathname={location.pathname} />
             ) : (
               <div className="nav-group" key={l.to}>
