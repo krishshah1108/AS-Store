@@ -16,7 +16,7 @@ import {
   WifiSlash,
   X,
 } from '@phosphor-icons/react'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Logo from './Logo'
 import { useAuth } from '../context/AuthContext'
@@ -133,6 +133,8 @@ export default function Layout() {
   const toast = useToast()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef(null)
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
   )
@@ -147,6 +149,7 @@ export default function Layout() {
 
   useLayoutEffect(() => {
     setSidebarOpen(false)
+    setProfileOpen(false)
     window.scrollTo(0, 0)
   }, [location.pathname])
 
@@ -155,11 +158,21 @@ export default function Layout() {
       if (e.key === 'Escape') {
         setSidebarOpen(false)
         setConfirmLogout(false)
+        setProfileOpen(false)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  useEffect(() => {
+    if (!profileOpen) return undefined
+    function onPointer(event) {
+      if (!profileRef.current?.contains(event.target)) setProfileOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    return () => document.removeEventListener('pointerdown', onPointer)
+  }, [profileOpen])
 
   const connectionTitle = online ? 'Online' : 'Offline'
 
@@ -238,20 +251,59 @@ export default function Layout() {
               <span className="date-short">{todayLabel(true)}</span>
             </p>
           </div>
-          <div className="profile-menu">
-            <div className="profile-card">
-              <span className="profile-avatar" aria-hidden="true">
-                {(user?.name || 'U').slice(0, 1).toUpperCase()}
-                <span className={`status-dot${online ? ' up' : ''}`} />
-              </span>
-              <span className="profile-copy">
-                <strong>{user?.name}</strong>
-                <small>
-                  {online ? <WifiHigh size={14} weight="bold" /> : <WifiSlash size={14} weight="bold" />}
-                  {connectionTitle}
-                </small>
-              </span>
-            </div>
+          <div className="profile-menu" ref={profileRef}>
+            {isDesktop ? (
+              <div className="profile-card">
+                <span className="profile-avatar" aria-hidden="true">
+                  {(user?.name || 'U').slice(0, 1).toUpperCase()}
+                  <span className={`status-dot${online ? ' up' : ''}`} />
+                </span>
+                <span className="profile-copy">
+                  <strong>{user?.name}</strong>
+                  <small>
+                    {online ? <WifiHigh size={14} weight="bold" /> : <WifiSlash size={14} weight="bold" />}
+                    {connectionTitle}
+                  </small>
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="profile-card"
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
+                aria-label="Account menu"
+                onClick={() => setProfileOpen((open) => !open)}
+              >
+                <span className="profile-avatar" aria-hidden="true">
+                  {(user?.name || 'U').slice(0, 1).toUpperCase()}
+                  <span className={`status-dot${online ? ' up' : ''}`} />
+                </span>
+                <span className="profile-copy">
+                  <strong>{user?.name}</strong>
+                  <small>
+                    {online ? <WifiHigh size={14} weight="bold" /> : <WifiSlash size={14} weight="bold" />}
+                    {connectionTitle}
+                  </small>
+                </span>
+              </button>
+            )}
+            {!isDesktop && profileOpen && (
+              <div className="profile-pop" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="btn ghost"
+                  onClick={() => {
+                    setProfileOpen(false)
+                    setConfirmLogout(true)
+                  }}
+                >
+                  <SignOut size={16} weight="bold" />
+                  Logout
+                </button>
+              </div>
+            )}
             {pendingCount > 0 && (
               <span className="pending-note" title={`${pendingCount} waiting to sync`}>
                 <CloudArrowUp size={14} weight="bold" />

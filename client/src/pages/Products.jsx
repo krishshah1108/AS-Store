@@ -1,9 +1,8 @@
-import { FileXls, MagnifyingGlass, PencilSimple, Plus } from '@phosphor-icons/react'
+import { MagnifyingGlass, PencilSimple, Plus } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
-import ProductImport from '../components/ProductImport'
 import StatusSwitch from '../components/StatusSwitch'
 import { productsApi } from '../lib/api'
 import { formatMoney } from '../lib/billShare'
@@ -22,7 +21,6 @@ export default function Products() {
   const [form, setForm] = useState(emptyForm)
   const [editing, setEditing] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
-  const [importOpen, setImportOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [page, setPage] = useState(1)
 
@@ -62,7 +60,6 @@ export default function Products() {
   function startEdit(row) {
     setEditing(row)
     setFormOpen(true)
-    setImportOpen(false)
     setForm({
       name: row.name || '',
       unit: row.unit || 'pcs',
@@ -159,35 +156,12 @@ export default function Products() {
           <p className="muted">Catalogue with searchable names and editable rates.</p>
         </div>
         <div className="row-actions">
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => {
-              setImportOpen(true)
-              setFormOpen(false)
-            }}
-          >
-            <FileXls size={16} weight="bold" />
-            Import Excel
-          </button>
           <Link to="/products/new" className="btn primary">
             <Plus size={16} weight="bold" />
             Add product
           </Link>
         </div>
       </header>
-
-      {importOpen && (
-        <ProductImport
-          existingNames={rows.map((row) => row.name || '')}
-          online={online}
-          onDone={() => {
-            setImportOpen(false)
-            load()
-          }}
-          onClose={() => setImportOpen(false)}
-        />
-      )}
 
       {formOpen && (
         <form className="panel form editor" onSubmit={onSubmit}>

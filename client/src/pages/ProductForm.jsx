@@ -1,6 +1,7 @@
-import { ArrowLeft, Plus } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { ArrowLeft, FileXls, Plus } from '@phosphor-icons/react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import ProductImport from '../components/ProductImport'
 import { productsApi } from '../lib/api'
 import { cacheGet, cacheSet, enqueueMutation, newLocalId } from '../lib/storage'
 import { useSync } from '../context/SyncContext'
@@ -14,6 +15,26 @@ export default function ProductForm() {
   const toast = useToast()
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [existingNames, setExistingNames] = useState(() =>
+    (cacheGet('products') || []).map((row) => row.name || '')
+  )
+
+  useEffect(() => {
+    if (!online) return undefined
+    let active = true
+    productsApi
+      .list()
+      .then((rows) => {
+        if (!active) return
+        cacheSet('products', rows)
+        setExistingNames(rows.map((row) => row.name || ''))
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [online])
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -62,7 +83,22 @@ export default function ProductForm() {
           <h1>Add product</h1>
           <p className="muted">Add a name, unit, and sale price to the catalogue.</p>
         </div>
+        <div className="row-actions">
+          <button type="button" className="btn ghost" onClick={() => setImportOpen((open) => !open)}>
+            <FileXls size={16} weight="bold" />
+            Import products
+          </button>
+        </div>
       </header>
+
+      {importOpen && (
+        <ProductImport
+          existingNames={existingNames}
+          online={online}
+          onDone={() => navigate('/products')}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
 
       <form className="panel form editor" onSubmit={onSubmit}>
         <label>
