@@ -205,7 +205,13 @@ export default function Customers() {
           <label>
             Mobile
             <input
+              name="mobile"
+              type="tel"
               inputMode="numeric"
+              autoComplete="tel"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="10-digit mobile number"
               value={form.mobile}
               onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}

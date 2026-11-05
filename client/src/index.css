@@ -283,20 +283,6 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .page-header .row-actions { width: 100%; }
 .page-header .btn { flex: 1; justify-content: center; }
 
-.dash-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
-  margin: 0 0 8px;
-  padding: 4px 12px 4px 8px;
-  border-radius: 999px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
 .back-link {
   display: inline-flex;
   align-items: center;

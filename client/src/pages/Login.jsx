@@ -30,7 +30,7 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <form className="login-card" onSubmit={onSubmit} autoComplete="on">
+      <form className="login-card" method="post" onSubmit={onSubmit} autoComplete="on">
         <Logo />
         <p className="muted">Sign in with mobile number and password.</p>
         <label>
@@ -38,10 +38,13 @@ export default function Login() {
             <Phone size={16} weight="duotone" /> Mobile
           </span>
           <input
-            name="username"
+            name="mobile"
             type="tel"
             inputMode="numeric"
-            autoComplete="username"
+            autoComplete="tel"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             autoFocus
             required
             minLength={10}

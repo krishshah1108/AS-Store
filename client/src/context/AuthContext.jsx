@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
 
   async function login(mobile, password) {
     const res = await authApi.login(mobile, password)
+    await rememberBrowserLogin(mobile, password, res.user?.name)
     localStorage.setItem('as_store_token', res.token)
     setUser(res.user)
     return res.user
@@ -44,4 +45,18 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   return useContext(AuthContext)
+}
+
+async function rememberBrowserLogin(mobile, password, name) {
+  try {
+    if (typeof window.PasswordCredential !== 'function' || !navigator.credentials?.store) return
+    const credential = new window.PasswordCredential({
+      id: mobile,
+      password,
+      name: name || mobile,
+    })
+    await navigator.credentials.store(credential)
+  } catch {
+    // The prompt was dismissed, or this browser will not store the sign-in.
+  }
 }

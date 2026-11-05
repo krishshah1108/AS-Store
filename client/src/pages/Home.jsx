@@ -1,5 +1,4 @@
 import {
-  CalendarBlank,
   CurrencyInr,
   Notebook,
   Receipt,
@@ -12,13 +11,6 @@ import { reportsApi } from '../lib/api'
 import { formatMoney } from '../lib/billShare'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
-
-function todayLabel() {
-  const date = new Date()
-  const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'long' }).format(date)
-  const month = new Intl.DateTimeFormat('en-GB', { month: 'long' }).format(date)
-  return `${weekday}, ${date.getDate()} ${month}`
-}
 
 export default function Home() {
   const { refreshKey } = useSync()
@@ -36,10 +28,6 @@ export default function Home() {
     <div className="page">
       <header className="page-header dash-header">
         <div>
-          <p className="dash-kicker">
-            <CalendarBlank size={16} weight="bold" />
-            {todayLabel()}
-          </p>
           <h1>Today’s accounts</h1>
           <p className="muted">
             {dash

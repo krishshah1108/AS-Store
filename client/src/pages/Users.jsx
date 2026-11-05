@@ -101,8 +101,14 @@ export default function Users() {
               <Phone size={16} weight="duotone" /> Mobile
             </span>
             <input
+              name="mobile"
+              type="tel"
               required
               inputMode="numeric"
+              autoComplete="tel"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="10-digit mobile number"
               value={form.mobile}
               onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}
