@@ -1,5 +1,6 @@
 import {
   CalendarBlank,
+  CaretRight,
   ChartLine,
   CloudArrowUp,
   House,
@@ -40,21 +41,23 @@ function todayLabel(compact) {
 }
 
 const links = [
-  { to: '/', label: 'Home', end: true, icon: House },
+  { to: '/', label: 'Home', end: true, icon: House, mobile: 'bar' },
   {
     to: '/bills',
     label: 'Bills',
     icon: Receipt,
+    mobile: 'bar',
     match: (path) => path === '/bills' || (path.startsWith('/bills/') && path !== '/bills/new'),
-    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus }],
+    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus, mobile: 'bar', accent: true }],
   },
-  { to: '/ledger', label: 'Ledger', icon: Notebook },
-  { to: '/reports', label: 'Reports', icon: ChartLine },
+  { to: '/ledger', label: 'Ledger', icon: Notebook, mobile: 'bar' },
+  { to: '/reports', label: 'Reports', icon: ChartLine, mobile: 'bar' },
   {
     to: '/customers',
     label: 'Customers',
     end: true,
     icon: UsersThree,
+    mobile: 'menu',
     children: [{ to: '/customers/new', label: 'Add customer', icon: Plus }],
   },
   {
@@ -62,21 +65,69 @@ const links = [
     label: 'Products',
     end: true,
     icon: Package,
+    mobile: 'menu',
     children: [{ to: '/products/new', label: 'Add product', icon: Plus }],
   },
-  { to: '/users', label: 'Users', ownerOnly: true, icon: UsersIcon },
+  { to: '/users', label: 'Users', ownerOnly: true, icon: UsersIcon, mobile: 'menu' },
 ]
 
-function NavItem({ item, pathname }) {
+function barLinks(items) {
+  const out = []
+  for (const item of items) {
+    if (item.mobile === 'bar') out.push(item)
+    for (const child of item.children || []) {
+      if (child.mobile === 'bar') out.push(child)
+    }
+  }
+  return out
+}
+
+function pathInGroup(item, pathname) {
+  if (pathname === item.to || item.match?.(pathname)) return true
+  return (item.children || []).some((child) => pathname === child.to || child.match?.(pathname))
+}
+
+function NavGroup({ item, pathname }) {
+  const [open, setOpen] = useState(() => pathInGroup(item, pathname))
+
+  useEffect(() => {
+    setOpen(pathInGroup(item, pathname))
+  }, [item, pathname])
+
+  return (
+    <div className={`nav-group${open ? ' is-open' : ''}`}>
+      <div className="nav-parent">
+        <NavItem item={item} pathname={pathname} />
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-expanded={open}
+          aria-label={open ? `Hide ${item.label} pages` : `Show ${item.label} pages`}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <CaretRight size={14} weight="bold" />
+        </button>
+      </div>
+      <div className="nav-children">
+        {item.children.map((child) => (
+          <NavItem key={child.to} item={child} pathname={pathname} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function NavItem({ item, pathname, compact }) {
   const Icon = item.icon
+  const active = (isActive) => (item.match ? item.match(pathname) : isActive) ? 'active' : ''
   return (
     <NavLink
       to={item.to}
       end={item.end}
-      className={({ isActive }) => ((item.match ? item.match(pathname) : isActive) ? 'active' : '')}
+      className={({ isActive }) => [active(isActive), compact && item.accent ? 'bottom-add' : ''].filter(Boolean).join(' ')}
     >
-      <Icon size={20} weight="regular" />
-      {item.label}
+      <Icon size={compact ? 22 : 20} weight={item.accent ? 'bold' : 'regular'} />
+      {compact ? <span>{item.label}</span> : item.label}
     </NavLink>
   )
 }
@@ -126,6 +177,8 @@ export default function Layout() {
   }
 
   const navLinks = links.filter((l) => !l.ownerOnly || isOwner)
+  const menuLinks = isDesktop ? navLinks : navLinks.filter((l) => l.mobile === 'menu')
+  const mobileBar = barLinks(navLinks)
 
   return (
     <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -143,18 +196,15 @@ export default function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          {navLinks.map((l) => (
-            <div className="nav-group" key={l.to}>
-              <NavItem item={l} pathname={location.pathname} />
-              {l.children?.length > 0 && (
-                <div className="nav-children">
-                  {l.children.map((child) => (
-                    <NavItem key={child.to} item={child} pathname={location.pathname} />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          {menuLinks.map((l) =>
+            l.children?.length ? (
+              <NavGroup key={l.to} item={l} pathname={location.pathname} />
+            ) : (
+              <div className="nav-group" key={l.to}>
+                <NavItem item={l} pathname={location.pathname} />
+              </div>
+            )
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -227,27 +277,10 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        <nav className="bottom-nav" aria-label="Primary">
-          <NavLink to="/" end>
-            <House size={22} weight="regular" />
-            Home
-          </NavLink>
-          <NavLink to="/bills/new" className="bottom-add">
-            <Plus size={22} weight="bold" />
-            Add bill
-          </NavLink>
-          <NavLink to="/ledger">
-            <Notebook size={22} weight="regular" />
-            Ledger
-          </NavLink>
-          <NavLink to="/reports">
-            <ChartLine size={22} weight="regular" />
-            Reports
-          </NavLink>
-          <button type="button" onClick={() => setSidebarOpen(true)}>
-            <List size={22} weight="regular" />
-            Menu
-          </button>
+        <nav className="bottom-nav" aria-label="Primary" style={{ '--bottom-count': mobileBar.length }}>
+          {mobileBar.map((item) => (
+            <NavItem key={item.to} item={item} pathname={location.pathname} compact />
+          ))}
         </nav>
       </div>
 
