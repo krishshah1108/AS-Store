@@ -305,7 +305,7 @@ export default function BillForm() {
             <ArrowLeft size={16} weight="bold" />
             All bills
           </Link>
-          <h1>{isNew ? 'New bill' : billMeta?.billNo || 'Edit bill'}</h1>
+          <h1>{isNew ? 'Add bill' : billMeta?.billNo || 'Edit bill'}</h1>
           <p className="muted">Search a product, press Enter, then take payment.</p>
         </div>
         {!isNew && billMeta && (

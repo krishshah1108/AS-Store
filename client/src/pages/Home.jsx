@@ -53,7 +53,7 @@ export default function Home() {
         <div className="row-actions">
           <Link className="btn primary" to="/bills/new">
             <Receipt size={16} weight="bold" />
-            New bill
+            Add bill
           </Link>
           <Link className="btn ghost" to="/ledger">
             <Notebook size={16} weight="bold" />

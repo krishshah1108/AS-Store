@@ -6,6 +6,7 @@ import {
   List,
   Notebook,
   Package,
+  Plus,
   Receipt,
   SignOut,
   Users as UsersIcon,
@@ -40,7 +41,13 @@ function todayLabel(compact) {
 
 const links = [
   { to: '/', label: 'Home', end: true, icon: House },
-  { to: '/bills', label: 'Bills', icon: Receipt },
+  {
+    to: '/bills',
+    label: 'Bills',
+    icon: Receipt,
+    match: (path) => path === '/bills' || (path.startsWith('/bills/') && path !== '/bills/new'),
+  },
+  { to: '/bills/new', label: 'Add bill', icon: Plus },
   { to: '/ledger', label: 'Ledger', icon: Notebook },
   { to: '/reports', label: 'Reports', icon: ChartLine },
   { to: '/customers', label: 'Customers', icon: UsersThree },
@@ -114,7 +121,7 @@ export default function Layout() {
                 key={l.to}
                 to={l.to}
                 end={l.end}
-                className={({ isActive }) => (isActive ? 'active' : '')}
+                className={({ isActive }) => ((l.match ? l.match(location.pathname) : isActive) ? 'active' : '')}
               >
                 <Icon size={20} weight="regular" />
                 {l.label}
@@ -198,9 +205,9 @@ export default function Layout() {
             <House size={22} weight="regular" />
             Home
           </NavLink>
-          <NavLink to="/bills">
-            <Receipt size={22} weight="regular" />
-            Bills
+          <NavLink to="/bills/new" className="bottom-add">
+            <Plus size={22} weight="bold" />
+            Add bill
           </NavLink>
           <NavLink to="/ledger">
             <Notebook size={22} weight="regular" />

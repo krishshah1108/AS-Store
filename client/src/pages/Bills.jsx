@@ -43,7 +43,7 @@ export default function Bills() {
         </div>
         <Link to="/bills/new" className="btn primary">
           <Plus size={16} weight="bold" />
-          New bill
+          Add bill
         </Link>
       </header>
 

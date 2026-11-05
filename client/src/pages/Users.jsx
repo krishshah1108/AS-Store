@@ -72,12 +72,12 @@ export default function Users() {
   }
 
   async function toggle(row, isActive) {
+    setRows((list) => list.map((item) => (item._id === row._id ? { ...item, isActive } : item)))
     try {
       await usersApi.setActive(row._id, isActive)
-      await load()
-      bump()
       toast.success(isActive ? 'User activated' : 'User deactivated')
     } catch (err) {
+      setRows((list) => list.map((item) => (item._id === row._id ? { ...item, isActive: row.isActive } : item)))
       toast.error(err.message)
     }
   }

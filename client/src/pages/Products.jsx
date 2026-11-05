@@ -165,11 +165,14 @@ export default function Products() {
         refreshPending()
         toast.info('Saved on this device. It will sync when you are back online.')
       } else {
+        setRows((list) => list.map((item) => (item._id === row._id ? { ...item, isActive } : item)))
         await productsApi.update(row._id, payload)
-        await load()
         toast.success(isActive ? 'Product activated' : 'Product deactivated')
       }
     } catch (err) {
+      if (online) {
+        setRows((list) => list.map((item) => (item._id === row._id ? { ...item, isActive: row.isActive } : item)))
+      }
       toast.error(err.message)
     }
   }
