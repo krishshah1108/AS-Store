@@ -12,6 +12,7 @@ import Login from './pages/Login'
 import ProductForm from './pages/ProductForm'
 import Products from './pages/Products'
 import Reports from './pages/Reports'
+import Settings from './pages/Settings'
 import UserForm from './pages/UserForm'
 import Users from './pages/Users'
 
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="products/new" element={<ProductForm />} />
         <Route path="users" element={<Users />} />
         <Route path="users/new" element={<UserForm />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

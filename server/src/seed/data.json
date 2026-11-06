@@ -1,372 +1,122 @@
 {
   "users": [
     {
-      "name": "Dhruv Shah",
-      "mobile": "9999999999",
+      "_id": "6aedfdd70e7465ea6ef17fcf",
+      "name": "Krish Shah",
+      "mobile": "8200417557",
+      "passwordHash": "$2b$10$ySFqCjmR6NXYr5EiRn.HFO8q3QJGoiXm57sO.yMZasgvCr.oZpFwG",
       "role": "owner",
-      "password": "asstore26",
       "isActive": true
     },
     {
-      "name": "Kavya Mehta",
+      "_id": "6aedfe32eddbd5594aecf8ec",
+      "name": "Dhruv",
+      "mobile": "9999999999",
+      "passwordHash": "$2b$10$SThHEnQzqYeRdiRXUHVVU.cD63L.sjrud3jCCITd83EZWV9LHWy.2",
+      "role": "owner",
+      "isActive": true
+    },
+    {
+      "_id": "6aedfe4aeddbd5594aecf8f6",
+      "name": "Mehul",
       "mobile": "8888888888",
+      "passwordHash": "$2b$10$M0L792LvH16eF/ybst49Y.YKXT7bZHZGBIQ79YFmhCx6TqgnaWhdW",
       "role": "employee",
-      "password": "asstore26",
       "isActive": true
     }
   ],
-  "settings": {
-    "shopName": "AS Store",
-    "address": "Shop 12, Display Market, Ahmedabad",
-    "phone": "9999999999",
-    "upiId": "asstore@upi",
-    "overdueDays": 30,
-    "billFooterNote": "Thank you for your business"
-  },
   "products": [
-    { "ref": "acp", "name": "ACP Sheet 3mm", "salePrice": 1850, "isActive": true },
-    { "ref": "acrylic", "name": "Acrylic Letter 8 inch", "salePrice": 95, "isActive": true },
-    { "ref": "flex", "name": "Flex Banner", "salePrice": 42, "isActive": true },
-    { "ref": "module", "name": "LED Module White", "salePrice": 18, "isActive": true },
-    { "ref": "vinyl", "name": "Vinyl Roll 3ft", "salePrice": 480, "isActive": true },
-    { "ref": "channel", "name": "Channel Letter", "salePrice": 720, "isActive": true },
-    { "ref": "glow", "name": "Glow Sign Board", "salePrice": 2400, "isActive": true },
-    { "ref": "ss", "name": "SS Letter", "salePrice": 160, "isActive": true },
-    { "ref": "strip", "name": "LED Strip 5m", "salePrice": 260, "isActive": true },
-    { "ref": "sunboard", "name": "Sunboard Sheet", "salePrice": 310, "isActive": true }
+    { "name": "ACP Sheet 3mm", "salePrice": 1850, "isActive": true, "createdBy": "6aedfdd70e7465ea6ef17fcf" },
+    { "name": "Acrylic Letter 8 inch", "salePrice": 95, "isActive": true, "createdBy": "6aedfe32eddbd5594aecf8ec" },
+    { "name": "Flex Banner", "salePrice": 42, "isActive": true, "createdBy": "6aedfe4aeddbd5594aecf8f6" },
+    { "name": "LED Module White", "salePrice": 18, "isActive": true, "createdBy": "6aedfdd70e7465ea6ef17fcf" },
+    { "name": "Vinyl Roll 3ft", "salePrice": 480, "isActive": true, "createdBy": "6aedfe32eddbd5594aecf8ec" },
+    { "name": "Channel Letter", "salePrice": 720, "isActive": true, "createdBy": "6aedfe4aeddbd5594aecf8f6" },
+    { "name": "Glow Sign Board", "salePrice": 2400, "isActive": true, "createdBy": "6aedfdd70e7465ea6ef17fcf" },
+    { "name": "SS Letter", "salePrice": 160, "isActive": true, "createdBy": "6aedfe32eddbd5594aecf8ec" },
+    { "name": "LED Strip 5m", "salePrice": 260, "isActive": true, "createdBy": "6aedfe4aeddbd5594aecf8f6" },
+    { "name": "Sunboard Sheet", "salePrice": 310, "isActive": true, "createdBy": "6aedfdd70e7465ea6ef17fcf" }
   ],
   "customers": [
     {
-      "ref": "shah",
       "name": "Shah Neon Arts",
       "mobile": "9812011101",
       "address": "Navrangpura, Ahmedabad",
       "notes": "Pays in parts against the oldest bill",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfdd70e7465ea6ef17fcf"
     },
     {
-      "ref": "patel",
       "name": "Patel Sign House",
       "mobile": "9823022202",
       "address": "CG Road, Ahmedabad",
       "notes": "Settles at the counter",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfe32eddbd5594aecf8ec"
     },
     {
-      "ref": "mehta",
       "name": "Mehta Flex Point",
       "mobile": "9834033303",
       "address": "Naroda, Ahmedabad",
       "notes": "Asks for a small discount on large flex jobs",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfe4aeddbd5594aecf8f6"
     },
     {
-      "ref": "desai",
       "name": "Desai Glass and Board",
       "mobile": "9845044404",
       "address": "Satellite, Ahmedabad",
       "notes": "Often splits cash and UPI",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfdd70e7465ea6ef17fcf"
     },
     {
-      "ref": "joshi",
       "name": "Joshi Lights",
       "mobile": "9856055505",
       "address": "Maninagar, Ahmedabad",
       "notes": "Prefers UPI",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfe32eddbd5594aecf8ec"
     },
     {
-      "ref": "kothari",
       "name": "Kothari Decor",
       "mobile": "9867066606",
       "address": "Odhav, Ahmedabad",
       "notes": "Clears a bill after the job is installed",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfe4aeddbd5594aecf8f6"
     },
     {
-      "ref": "trivedi",
       "name": "Trivedi ACP Works",
       "mobile": "9878077707",
       "address": "Nikol, Ahmedabad",
       "notes": "Large ACP orders on credit",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfdd70e7465ea6ef17fcf"
     },
     {
-      "ref": "parmar",
       "name": "Parmar Vinyl Studio",
       "mobile": "9889088808",
       "address": "Bopal, Ahmedabad",
       "notes": "Pays cash and UPI together",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfe32eddbd5594aecf8ec"
     },
     {
-      "ref": "chauhan",
       "name": "Chauhan Glow Signs",
       "mobile": "9890099909",
       "address": "Vastral, Ahmedabad",
       "notes": "Names the bill when sending part payment",
-      "isActive": true
+      "isActive": true,
+      "createdBy": "6aedfe4aeddbd5594aecf8f6"
     },
     {
-      "ref": "solanki",
       "name": "Solanki Display",
       "mobile": "9901000010",
       "address": "Gota, Ahmedabad",
       "notes": "Old credit still open",
-      "isActive": true
-    }
-  ],
-  "bills": [
-    {
-      "ref": "solanki-letters",
-      "customer": "solanki",
-      "billDate": "2026-09-05",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Shop name letters, left on credit",
-      "items": [
-        { "product": "ss", "qty": 12 },
-        { "product": "acrylic", "qty": 8 }
-      ],
-      "payments": { "cash": 0, "upi": 0 }
-    },
-    {
-      "ref": "shah-front",
-      "customer": "shah",
-      "billDate": "2026-09-12",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Front elevation ACP and modules",
-      "items": [
-        { "product": "acp", "qty": 2 },
-        { "product": "module", "qty": 40 }
-      ],
-      "payments": { "cash": 0, "upi": 0 }
-    },
-    {
-      "ref": "patel-channel",
-      "customer": "patel",
-      "billDate": "2026-09-20",
-      "createdBy": "8888888888",
-      "discount": 0,
-      "notes": "Channel and steel letters, paid in cash",
-      "items": [
-        { "product": "channel", "qty": 3 },
-        { "product": "ss", "qty": 10 }
-      ],
-      "payments": { "cash": 3760, "upi": 0 }
-    },
-    {
-      "ref": "mehta-flex",
-      "customer": "mehta",
-      "billDate": "2026-09-28",
-      "createdBy": "9999999999",
-      "discount": 120,
-      "notes": "Banner run with a discount, part paid on UPI",
-      "items": [
-        { "product": "flex", "qty": 80 },
-        { "product": "vinyl", "qty": 2 }
-      ],
-      "payments": { "cash": 0, "upi": 2000 }
-    },
-    {
-      "ref": "chauhan-acp",
-      "customer": "chauhan",
-      "billDate": "2026-10-01",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Single ACP sheet on credit",
-      "items": [{ "product": "acp", "qty": 1 }],
-      "payments": { "cash": 0, "upi": 0 }
-    },
-    {
-      "ref": "desai-boards",
-      "customer": "desai",
-      "billDate": "2026-10-02",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Boards and letters, cash plus UPI, balance on udhaar",
-      "items": [
-        { "product": "sunboard", "qty": 4 },
-        { "product": "acrylic", "qty": 20 }
-      ],
-      "payments": { "cash": 1000, "upi": 800 }
-    },
-    {
-      "ref": "joshi-strips",
-      "customer": "joshi",
-      "billDate": "2026-10-08",
-      "createdBy": "8888888888",
-      "discount": 0,
-      "notes": "Strip and modules, paid in full on UPI",
-      "items": [
-        { "product": "strip", "qty": 6 },
-        { "product": "module", "qty": 25 }
-      ],
-      "payments": { "cash": 0, "upi": 2010 }
-    },
-    {
-      "ref": "kothari-glow",
-      "customer": "kothari",
-      "billDate": "2026-10-14",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Glow board and one channel letter, to be cleared after fitting",
-      "items": [
-        { "product": "glow", "qty": 1 },
-        { "product": "channel", "qty": 1 }
-      ],
-      "payments": { "cash": 0, "upi": 0 }
-    },
-    {
-      "ref": "trivedi-acp",
-      "customer": "trivedi",
-      "billDate": "2026-10-18",
-      "createdBy": "9999999999",
-      "discount": 170,
-      "notes": "ACP lot with a trade discount, part cash received",
-      "items": [
-        { "product": "acp", "qty": 3 },
-        { "product": "sunboard", "qty": 2 }
-      ],
-      "payments": { "cash": 2500, "upi": 0 }
-    },
-    {
-      "ref": "parmar-vinyl",
-      "customer": "parmar",
-      "billDate": "2026-10-22",
-      "createdBy": "8888888888",
-      "discount": 0,
-      "notes": "Vinyl and flex, settled in cash and UPI",
-      "items": [
-        { "product": "vinyl", "qty": 3 },
-        { "product": "flex", "qty": 30 }
-      ],
-      "payments": { "cash": 1500, "upi": 1200 }
-    },
-    {
-      "ref": "chauhan-glow",
-      "customer": "chauhan",
-      "billDate": "2026-10-27",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Two glow boards with strips, left on credit",
-      "items": [
-        { "product": "glow", "qty": 2 },
-        { "product": "strip", "qty": 4 }
-      ],
-      "payments": { "cash": 0, "upi": 0 }
-    },
-    {
-      "ref": "shah-strips",
-      "customer": "shah",
-      "billDate": "2026-10-30",
-      "createdBy": "8888888888",
-      "discount": 0,
-      "notes": "Small strip order, part cash",
-      "items": [
-        { "product": "strip", "qty": 2 },
-        { "product": "acrylic", "qty": 4 }
-      ],
-      "payments": { "cash": 400, "upi": 0 }
-    },
-    {
-      "ref": "mehta-repeat",
-      "customer": "mehta",
-      "billDate": "2026-11-03",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Repeat flex job, paid in cash",
-      "items": [{ "product": "flex", "qty": 25 }],
-      "payments": { "cash": 1050, "upi": 0 }
-    },
-    {
-      "ref": "desai-modules",
-      "customer": "desai",
-      "billDate": "2026-11-04",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "Ten modules, paid on UPI",
-      "items": [{ "product": "module", "qty": 10 }],
-      "payments": { "cash": 0, "upi": 180 }
-    },
-    {
-      "ref": "kothari-board",
-      "customer": "kothari",
-      "billDate": "2026-11-05",
-      "createdBy": "9999999999",
-      "discount": 0,
-      "notes": "One sunboard, on udhaar",
-      "items": [{ "product": "sunboard", "qty": 1 }],
-      "payments": { "cash": 0, "upi": 0 }
-    },
-    {
-      "ref": "joshi-vinyl",
-      "customer": "joshi",
-      "billDate": "2026-11-06",
-      "createdBy": "8888888888",
-      "discount": 0,
-      "notes": "One vinyl roll, part cash today",
-      "items": [{ "product": "vinyl", "qty": 1 }],
-      "payments": { "cash": 200, "upi": 0 }
-    }
-  ],
-  "payments": [
-    {
-      "customer": "shah",
-      "paymentDate": "2026-09-28",
-      "createdBy": "9999999999",
-      "cash": 0,
-      "upi": 2000,
-      "allocationMode": "fifo",
-      "notes": "UPI part payment on the front elevation bill"
-    },
-    {
-      "customer": "shah",
-      "paymentDate": "2026-10-18",
-      "createdBy": "8888888888",
-      "cash": 1500,
-      "upi": 0,
-      "allocationMode": "fifo",
-      "notes": "Cash collected against the remaining elevation bill"
-    },
-    {
-      "customer": "mehta",
-      "paymentDate": "2026-10-25",
-      "createdBy": "9999999999",
-      "cash": 1000,
-      "upi": 0,
-      "allocationMode": "fifo",
-      "notes": "Cash against the September flex bill"
-    },
-    {
-      "customer": "trivedi",
-      "paymentDate": "2026-11-01",
-      "createdBy": "9999999999",
-      "cash": 1500,
-      "upi": 0,
-      "allocationMode": "fifo",
-      "notes": "Further cash on the ACP lot"
-    },
-    {
-      "customer": "kothari",
-      "paymentDate": "2026-11-02",
-      "createdBy": "8888888888",
-      "cash": 0,
-      "upi": 3120,
-      "allocationMode": "fifo",
-      "notes": "UPI clearing the glow board bill"
-    },
-    {
-      "customer": "chauhan",
-      "paymentDate": "2026-11-04",
-      "createdBy": "9999999999",
-      "cash": 1000,
-      "upi": 0,
-      "allocationMode": "manual",
-      "allocations": [{ "bill": "chauhan-glow", "amount": 1000 }],
-      "notes": "Cash sent specifically for the glow board bill"
+      "isActive": true,
+      "createdBy": "6aedfdd70e7465ea6ef17fcf"
     }
   ]
 }

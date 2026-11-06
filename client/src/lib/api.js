@@ -70,6 +70,7 @@ export const usersApi = {
 
 export const settingsApi = {
   get: () => api('/api/settings'),
+  update: (body) => api('/api/settings', { method: 'PUT', body: JSON.stringify(body) }),
 }
 
 export const syncApi = {

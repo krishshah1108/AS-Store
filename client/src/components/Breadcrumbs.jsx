@@ -28,6 +28,7 @@ const trails = [
   },
   { test: (path) => path === '/reports', crumbs: [{ to: '/', label: 'Home' }, { label: 'Reports' }] },
   { test: (path) => path === '/users', crumbs: [{ to: '/', label: 'Home' }, { label: 'Users' }] },
+  { test: (path) => path === '/settings', crumbs: [{ to: '/', label: 'Home' }, { label: 'Settings' }] },
   {
     test: (path) => path === '/users/new',
     crumbs: [{ to: '/', label: 'Home' }, { to: '/users', label: 'Users' }, { label: 'Add user' }],

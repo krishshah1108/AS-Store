@@ -2,6 +2,7 @@ import {
   CalendarBlank,
   ChartLine,
   CloudArrowUp,
+  GearSix,
   House,
   List,
   Notebook,
@@ -72,6 +73,7 @@ const links = [
     icon: UsersIcon,
     children: [{ to: '/users/new', label: 'Add user', icon: Plus }],
   },
+  { to: '/settings', label: 'Settings', icon: GearSix },
 ]
 
 function barItem(items, to) {
