@@ -599,7 +599,6 @@ export default function BillForm() {
                 UPI
               </button>
               <button type="button" className={creditOn ? 'is-on' : ''} aria-pressed={creditOn} onClick={() => payAll('credit')}>
-                {creditOn && <Check size={14} weight="bold" />}
                 {creditLabel}
               </button>
             </div>
