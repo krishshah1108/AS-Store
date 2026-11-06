@@ -7,7 +7,7 @@ import { cacheGet, cacheSet, enqueueMutation, newLocalId } from '../lib/storage'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
-const emptyForm = { name: '', unit: 'pcs', salePrice: '' }
+const emptyForm = { name: '', salePrice: '' }
 
 export default function ProductForm() {
   const navigate = useNavigate()
@@ -40,9 +40,8 @@ export default function ProductForm() {
     e.preventDefault()
     setSaving(true)
     const payload = {
-      name: form.name,
-      unit: form.unit || 'pcs',
-      salePrice: Number(form.salePrice) || 0,
+      name: form.name.trim(),
+      salePrice: form.salePrice,
       updatedAtClient: new Date().toISOString(),
     }
 
@@ -81,7 +80,7 @@ export default function ProductForm() {
             All products
           </Link>
           <h1>Add product</h1>
-          <p className="muted">Add a name, unit, and sale price to the catalogue.</p>
+          <p className="muted">Add a name and sale price to the catalogue.</p>
         </div>
         <div className="row-actions">
           <button type="button" className="btn ghost" onClick={() => setImportOpen((open) => !open)}>
@@ -100,7 +99,7 @@ export default function ProductForm() {
         />
       )}
 
-      <form className="panel form editor" onSubmit={onSubmit}>
+      <form className="panel form editor cols-2" onSubmit={onSubmit}>
         <label>
           Name *
           <input
@@ -108,14 +107,6 @@ export default function ProductForm() {
             placeholder="Product name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </label>
-        <label>
-          Unit
-          <input
-            placeholder="pcs, kg, box…"
-            value={form.unit}
-            onChange={(e) => setForm({ ...form, unit: e.target.value })}
           />
         </label>
         <label>

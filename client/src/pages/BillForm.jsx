@@ -2,33 +2,33 @@ import {
   ArrowLeft,
   ArrowUUpLeft,
   FloppyDisk,
-  Plus,
   Printer,
   Trash,
   WhatsappLogo,
 } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import LineProductField from '../components/LineProductField'
 import LogoLoader from '../components/LogoLoader'
 import SearchSelect from '../components/SearchSelect'
 import { billsApi, customersApi, productsApi, settingsApi } from '../lib/api'
 import { formatDate, formatMoney, openWhatsAppShare, todayInput } from '../lib/billShare'
+import { placeBillProduct } from '../lib/billLines'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
 const emptyItem = () => ({
   productId: '',
   name: '',
-  unit: 'pcs',
   qty: 1,
-  rate: 0,
+  rate: '',
 })
 
 export default function BillForm() {
   const { id } = useParams()
   const isNew = !id || id === 'new'
   const navigate = useNavigate()
-  const { bump } = useSync()
+  const { bump, online } = useSync()
   const toast = useToast()
 
   const [customers, setCustomers] = useState([])
@@ -84,15 +84,16 @@ export default function BillForm() {
         setBillMeta(bill)
         setCustomerId(bill.customerId?._id || bill.customerId)
         setBillDate(new Date(bill.billDate).toISOString().slice(0, 10))
-        setItems(
-          bill.items.map((item) => ({
+        const lockedBill = bill.status === 'cancelled' || bill.status === 'returned'
+        setItems([
+          ...bill.items.map((item) => ({
             productId: item.productId || '',
             name: item.name,
-            unit: item.unit || 'pcs',
             qty: item.qty,
             rate: item.rate,
-          }))
-        )
+          })),
+          ...(lockedBill ? [] : [emptyItem()]),
+        ])
         setDiscount(bill.discount || 0)
         setCash(bill.payments?.cash || 0)
         setUpi(bill.payments?.upi || 0)
@@ -137,21 +138,42 @@ export default function BillForm() {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)))
   }
 
-  function addProduct(product) {
-    setItems((prev) => {
-      const blankIndex = prev.findIndex((i) => !i.name)
-      const nextItem = {
-        productId: product._id,
-        name: product.name,
-        unit: product.unit || 'pcs',
-        qty: 1,
-        rate: product.salePrice || 0,
-      }
-      if (blankIndex >= 0) {
-        return prev.map((item, i) => (i === blankIndex ? nextItem : item))
-      }
-      return [...prev, nextItem]
+  function chooseProduct(index, product) {
+    const result = placeBillProduct(items, index, product)
+    setItems(result.items)
+    if (result.addedAgain) {
+      toast.success(`${product.name} is already on this bill. Qty is now ${result.qty}`)
+    }
+  }
+
+  function typeProductName(index, text) {
+    const current = items[index]
+    const selected = products.find((product) => String(product._id) === String(current?.productId))
+    if (selected && selected.name === text) {
+      updateItem(index, { name: text })
+      return
+    }
+    updateItem(index, { name: text, productId: '', rate: '' })
+  }
+
+  async function createProduct(index, draft) {
+    const name = draft.name.trim()
+    const match = products.find((product) => product.name.trim().toLowerCase() === name.toLowerCase())
+    if (match && match.isActive !== false) {
+      chooseProduct(index, match)
+      toast.info(`${match.name} is already in the catalogue`)
+      return match
+    }
+    if (!online) throw new Error('The shop server needs to be online to add a product')
+    const created = await productsApi.create({
+      name,
+      salePrice: draft.salePrice,
+      updatedAtClient: new Date().toISOString(),
     })
+    setProducts((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)))
+    chooseProduct(index, created)
+    toast.success(`${created.name} added to the catalogue`)
+    return created
   }
 
   function removeItem(index) {
@@ -177,36 +199,31 @@ export default function BillForm() {
       toast.error('Select a customer')
       return
     }
-    if (Number(cash || 0) + Number(upi || 0) > total + 0.001) {
-      toast.error('Cash + UPI cannot exceed total')
+    const lines = items.filter((item) => String(item.name || '').trim())
+    if (!lines.length) {
+      toast.error('Add at least one product line')
       return
     }
-
+    if (lines.some((item) => !item.productId)) {
+      toast.error('Choose each product from the list, or add it to the catalogue')
+      return
+    }
     const payload = {
       customerId,
       billDate,
-      items: items
-        .filter((i) => i.name && Number(i.qty) > 0)
-        .map((i) => ({
+      items: lines.map((i) => ({
           productId: i.productId || undefined,
           name: i.name,
-          unit: i.unit || 'pcs',
-          qty: Number(i.qty),
-          rate: Number(i.rate),
+          qty: i.qty,
+          rate: i.rate,
         })),
-      discount: Number(discount) || 0,
+      discount,
       payments: {
-        cash: Number(cash) || 0,
-        upi: Number(upi) || 0,
-        credit,
+        cash,
+        upi,
       },
       notes,
       reason: reason || undefined,
-    }
-
-    if (!payload.items.length) {
-      toast.error('Add at least one product line')
-      return
     }
 
     setSaving(true)
@@ -258,12 +275,16 @@ export default function BillForm() {
         name: item.name,
         productId: item.productId,
         rate: item.rate,
-        unit: item.unit,
         qty: Number(returnQty[index] || 0),
       }))
       .filter((i) => i.qty > 0)
     if (!items.length) {
       toast.error('Enter return qty on at least one line')
+      return
+    }
+    const over = items.find((item) => item.qty > Number(billMeta.items[item.index].qty))
+    if (over) {
+      toast.error(`Cannot return more than billed qty for ${over.name}`)
       return
     }
     setSaving(true)
@@ -278,7 +299,6 @@ export default function BillForm() {
         result.items.map((item) => ({
           productId: item.productId || '',
           name: item.name,
-          unit: item.unit || 'pcs',
           qty: item.qty,
           rate: item.rate,
         }))
@@ -306,7 +326,7 @@ export default function BillForm() {
             All bills
           </Link>
           <h1>{isNew ? 'Add bill' : billMeta?.billNo || 'Edit bill'}</h1>
-          <p className="muted">Search a product, press Enter, then take payment.</p>
+          <p className="muted">Type a product on the line. Pick a match, or add a new one with its price.</p>
         </div>
         {!isNew && billMeta && (
           <div className="row-actions">
@@ -358,20 +378,6 @@ export default function BillForm() {
             </label>
           </div>
 
-          <div className="no-print">
-            <SearchSelect
-              label="Add product"
-              placeholder="Type a product and press Enter"
-              options={productOptions}
-              value=""
-              keepFocus
-              getKey={(product) => product._id}
-              getLabel={(product) => product.name}
-              getHint={(product) => `${product.unit || 'pcs'} · ${formatMoney(product.salePrice)}`}
-              onSelect={addProduct}
-            />
-          </div>
-
           <div className="bill-lines">
             <div className="bill-lines-head">
               <span>Product</span>
@@ -382,11 +388,13 @@ export default function BillForm() {
             </div>
             {items.map((item, index) => (
               <div className="bill-line" key={index}>
-                <input
-                  className="bill-line-name"
-                  placeholder="Product name"
-                  value={item.name}
-                  onChange={(e) => updateItem(index, { name: e.target.value, productId: '' })}
+                <LineProductField
+                  name={item.name}
+                  products={productOptions}
+                  disabled={locked}
+                  onNameChange={(text) => typeProductName(index, text)}
+                  onPick={(product) => chooseProduct(index, product)}
+                  onCreate={(draft) => createProduct(index, draft)}
                 />
                 <label>
                   <span>Qty</span>
@@ -426,14 +434,6 @@ export default function BillForm() {
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              className="btn ghost add-line no-print"
-              onClick={() => setItems((prev) => [...prev, emptyItem()])}
-            >
-              <Plus size={16} weight="bold" />
-              Add a manual line
-            </button>
           </div>
         </section>
 

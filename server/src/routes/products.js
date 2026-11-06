@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const { requireAuth } = require('../middleware/auth');
 const { writeAudit } = require('../utils/audit');
 const { emitChange } = require('../utils/socket');
+const { duplicateName, moneyError } = require('../lib/validate');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -27,7 +28,7 @@ router.post('/import', async (req, res) => {
     for (const item of items) {
       const name = String(item.name || '').trim();
       const salePrice = Number(item.salePrice);
-      if (!name || !Number.isFinite(salePrice) || salePrice < 0) {
+      if (!name || item.salePrice === '' || item.salePrice == null || !Number.isFinite(salePrice) || salePrice < 0) {
         invalid += 1;
         continue;
       }
@@ -39,7 +40,6 @@ router.post('/import', async (req, res) => {
       seen.add(key);
       docs.push({
         name,
-        unit: String(item.unit || 'pcs').trim() || 'pcs',
         salePrice,
         isActive: true,
         createdBy: req.user._id,
@@ -67,17 +67,26 @@ router.post('/import', async (req, res) => {
 
 router.post(
   '/',
-  body('name').trim().notEmpty(),
-  body('salePrice').isFloat({ min: 0 }),
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('salePrice').custom((value) => {
+    const message = moneyError(value, 'Sale price', { required: true });
+    if (message) throw new Error(message);
+    return true;
+  }),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ message: 'Invalid product data' });
+      return res.status(400).json({ message: errors.array()[0].msg || 'Invalid product data' });
+    }
+
+    const name = req.body.name.trim();
+    const existing = await Product.find().select('name');
+    if (duplicateName(existing, name)) {
+      return res.status(409).json({ message: 'A product with this name already exists' });
     }
 
     const product = await Product.create({
-      name: req.body.name.trim(),
-      unit: (req.body.unit || 'pcs').trim(),
+      name,
       salePrice: Number(req.body.salePrice),
       createdBy: req.user._id,
       updatedBy: req.user._id,
@@ -103,9 +112,20 @@ router.put('/:id', async (req, res) => {
 
   const before = product.toObject();
 
-  if (req.body.name !== undefined) product.name = String(req.body.name).trim();
-  if (req.body.unit !== undefined) product.unit = String(req.body.unit).trim();
-  if (req.body.salePrice !== undefined) product.salePrice = Number(req.body.salePrice);
+  if (req.body.name !== undefined) {
+    const name = String(req.body.name).trim();
+    if (!name) return res.status(400).json({ message: 'Name is required' });
+    const existing = await Product.find({ _id: { $ne: product._id } }).select('name');
+    if (duplicateName(existing, name)) {
+      return res.status(409).json({ message: 'A product with this name already exists' });
+    }
+    product.name = name;
+  }
+  if (req.body.salePrice !== undefined) {
+    const priceProblem = moneyError(req.body.salePrice, 'Sale price', { required: true });
+    if (priceProblem) return res.status(400).json({ message: priceProblem });
+    product.salePrice = Number(req.body.salePrice);
+  }
   if (req.body.isActive !== undefined) product.isActive = Boolean(req.body.isActive);
   product.updatedBy = req.user._id;
   product.updatedAtClient = req.body.updatedAtClient ? new Date(req.body.updatedAtClient) : new Date();

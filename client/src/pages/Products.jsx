@@ -10,7 +10,7 @@ import { cacheGet, cacheSet, enqueueMutation, newLocalId } from '../lib/storage'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
-const emptyForm = { name: '', unit: 'pcs', salePrice: '' }
+const emptyForm = { name: '', salePrice: '' }
 
 export default function Products() {
   const { refreshKey, online, refreshPending } = useSync()
@@ -62,7 +62,6 @@ export default function Products() {
     setFormOpen(true)
     setForm({
       name: row.name || '',
-      unit: row.unit || 'pcs',
       salePrice: String(row.salePrice ?? ''),
     })
   }
@@ -77,9 +76,8 @@ export default function Products() {
     e.preventDefault()
     setSaving(true)
     const payload = {
-      name: form.name,
-      unit: form.unit || 'pcs',
-      salePrice: Number(form.salePrice) || 0,
+      name: form.name.trim(),
+      salePrice: form.salePrice,
       updatedAtClient: new Date().toISOString(),
     }
 
@@ -116,7 +114,6 @@ export default function Products() {
   async function toggleActive(row, isActive) {
     const payload = {
       name: row.name,
-      unit: row.unit,
       salePrice: row.salePrice,
       isActive,
       updatedAtClient: new Date().toISOString(),
@@ -176,14 +173,6 @@ export default function Products() {
             />
           </label>
           <label>
-            Unit
-            <input
-              placeholder="pcs, kg, box…"
-              value={form.unit}
-              onChange={(e) => setForm({ ...form, unit: e.target.value })}
-            />
-          </label>
-          <label>
             Sale price (₹) *
             <input
               required
@@ -229,7 +218,6 @@ export default function Products() {
                     {row.name}
                     {row._pending && <span className="tag">pending</span>}
                   </strong>
-                  <span className="muted">{row.unit || 'pcs'}</span>
                 </div>
               </div>
               <dl className="record-facts">

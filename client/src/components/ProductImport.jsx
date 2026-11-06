@@ -7,19 +7,54 @@ import { useToast } from '../context/ToastContext'
 const MAP_KEY = 'as_store_product_import_map'
 const FIELDS = [
   { id: 'name', label: 'Product name', required: true },
-  { id: 'unit', label: 'Unit', required: false },
   { id: 'salePrice', label: 'Sale price', required: true },
 ]
 
 const HINTS = {
   name: /name|product|item/i,
-  unit: /unit|uom/i,
   salePrice: /price|rate|amount|mrp/i,
 }
 
 function cellText(value) {
   if (value === null || value === undefined) return ''
   return String(value).trim()
+}
+
+function stripBom(text) {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text
+}
+
+function delimiterOf(text) {
+  const first = text.split(/\r\n|\n|\r/).find((line) => line.trim()) || ''
+  const commas = (first.match(/,/g) || []).length
+  const semis = (first.match(/;/g) || []).length
+  const tabs = (first.match(/\t/g) || []).length
+  if (tabs > commas && tabs >= semis) return '\t'
+  if (semis > commas) return ';'
+  return ','
+}
+
+function saleAmount(value) {
+  let text = cellText(value).replace(/₹|\$|€|£/g, '').replace(/rs\.?/gi, '').replace(/\s/g, '')
+  if (!text) return ''
+  const comma = text.lastIndexOf(',')
+  const dot = text.lastIndexOf('.')
+  if (comma >= 0 && dot >= 0) {
+    text = comma > dot ? text.replace(/\./g, '').replace(',', '.') : text.replace(/,/g, '')
+  } else if (comma >= 0) {
+    const parts = text.split(',')
+    text = parts.length > 2 || parts[parts.length - 1].length === 3 ? text.replace(/,/g, '') : text.replace(',', '.')
+  }
+  const amount = Number(text)
+  return Number.isFinite(amount) ? amount : ''
+}
+
+function workbookFrom(buffer, name) {
+  if (String(name || '').toLowerCase().endsWith('.csv')) {
+    const text = stripBom(new TextDecoder('utf-8').decode(buffer))
+    return XLSX.read(text, { type: 'string', FS: delimiterOf(text), raw: false })
+  }
+  return XLSX.read(buffer, { type: 'array', raw: false })
 }
 
 function readSavedMap() {
@@ -64,19 +99,27 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      const book = XLSX.read(reader.result, { type: 'array' })
-      const sheet = book.Sheets[book.SheetNames[0]]
-      const grid = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
-      const head = (grid[0] || []).map((cell, index) => cellText(cell) || `Column ${index + 1}`)
-      const body = grid.slice(1).filter((row) => row.some((cell) => cellText(cell)))
-      if (!head.length || !body.length) {
-        toast.error('The file has no product rows')
-        return
+      try {
+        const book = workbookFrom(reader.result, file.name)
+        const sheet = book.Sheets[book.SheetNames[0]]
+        if (!sheet) {
+          toast.error('That file has no sheet to import')
+          return
+        }
+        const grid = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false })
+        const head = (grid[0] || []).map((cell, index) => cellText(cell) || `Column ${index + 1}`)
+        const body = grid.slice(1).filter((row) => row.some((cell) => cellText(cell)))
+        if (!head.length || !body.length) {
+          toast.error('The file has no product rows')
+          return
+        }
+        setFileName(file.name)
+        setHeaders(head)
+        setRows(body)
+        setMapping(buildMapping(head))
+      } catch {
+        toast.error('Could not read that Excel or CSV file')
       }
-      setFileName(file.name)
-      setHeaders(head)
-      setRows(body)
-      setMapping(buildMapping(head))
     }
     reader.onerror = () => toast.error('Could not read that file')
     reader.readAsArrayBuffer(file)
@@ -84,7 +127,7 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
 
   useEffect(() => {
     if (!headers.length) return
-    if (!mapping.name && !mapping.unit && !mapping.salePrice) return
+    if (!mapping.name && !mapping.salePrice) return
     localStorage.setItem(MAP_KEY, JSON.stringify(mapping))
   }, [mapping, headers.length])
 
@@ -105,10 +148,9 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
     return rows
       .map((row) => ({
         name: indexOf('name') >= 0 ? cellText(row[indexOf('name')]) : '',
-        unit: indexOf('unit') >= 0 ? cellText(row[indexOf('unit')]) : '',
-        salePrice: indexOf('salePrice') >= 0 ? cellText(row[indexOf('salePrice')]) : '',
+        salePrice: indexOf('salePrice') >= 0 ? saleAmount(row[indexOf('salePrice')]) : '',
       }))
-      .filter((item) => item.name || item.salePrice || item.unit)
+      .filter((item) => item.name || item.salePrice !== '')
   }, [rows, headers, mapping])
 
   const preview = mapped.slice(0, 5)
@@ -120,7 +162,7 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
       return
     }
     if (!ready) {
-      toast.error('Map product name and sale price to Excel columns')
+      toast.error('Map product name and sale price to columns')
       return
     }
     setImporting(true)
@@ -153,10 +195,10 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
   return (
     <section className="panel form editor">
       <h2>Import products</h2>
-      <p className="muted">Upload an Excel file, match each product field to a column, then import.</p>
+      <p className="muted">Upload an Excel or CSV file, match each product field to a column, then import.</p>
       <label className="file-drop">
         <FileXls size={36} weight="duotone" />
-        <strong>{fileName || 'Choose an Excel file'}</strong>
+        <strong>{fileName || 'Choose an Excel or CSV file'}</strong>
         <span>{fileName ? 'Choose a different file' : 'XLSX, XLS, or CSV. The first row must be the column headers.'}</span>
         <input
           type="file"
@@ -173,7 +215,7 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
                 {field.label}
                 {field.required ? ' *' : ''}
                 <select value={mapping[field.id] || ''} onChange={(event) => setField(field.id, event.target.value)}>
-                  <option value="">Choose an Excel column</option>
+                  <option value="">Choose a column</option>
                   {headers.map((header) => (
                     <option key={header} value={header}>
                       {header}
@@ -191,7 +233,6 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
               <thead>
                 <tr>
                   <th>Product name</th>
-                  <th>Unit</th>
                   <th>Sale price</th>
                 </tr>
               </thead>
@@ -199,13 +240,12 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
                 {preview.map((item, index) => (
                   <tr key={index}>
                     <td>{item.name || '—'}</td>
-                    <td>{item.unit || 'pcs'}</td>
-                    <td>{item.salePrice || '—'}</td>
+                    <td>{item.salePrice === '' ? '—' : item.salePrice}</td>
                   </tr>
                 ))}
                 {!preview.length && (
                   <tr>
-                    <td colSpan={3} className="muted">
+                    <td colSpan={2} className="muted">
                       Map name and price to preview rows.
                     </td>
                   </tr>

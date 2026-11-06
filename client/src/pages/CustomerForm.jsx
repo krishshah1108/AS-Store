@@ -20,6 +20,8 @@ export default function CustomerForm() {
     setSaving(true)
     const payload = {
       ...form,
+      name: form.name.trim(),
+      mobile: form.mobile.trim(),
       updatedAtClient: new Date().toISOString(),
     }
 
@@ -68,7 +70,7 @@ export default function CustomerForm() {
         </div>
       </header>
 
-      <form className="panel form editor" onSubmit={onSubmit}>
+      <form className="panel form editor cols-2" onSubmit={onSubmit}>
         <label>
           Name *
           <input
@@ -88,6 +90,9 @@ export default function CustomerForm() {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
+            maxLength={10}
+            pattern="[0-9]{10}"
+            title="Enter a 10-digit mobile number, or leave it blank"
             placeholder="10-digit mobile number"
             value={form.mobile}
             onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}

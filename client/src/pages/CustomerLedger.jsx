@@ -114,7 +114,7 @@ export default function CustomerLedger() {
       await paymentsApi.collect({
         customerId: selectedId,
         paymentDate,
-        amounts: { cash: Number(cash) || 0, upi: Number(upi) || 0 },
+        amounts: { cash, upi },
         allocationMode,
         allocations,
         notes,
@@ -145,8 +145,8 @@ export default function CustomerLedger() {
         fromAdvance,
         amounts:
           refundMethod === 'credit_adjustment'
-            ? { amount: Number(refundAmount) || 0 }
-            : { cash: Number(refundCash) || 0, upi: Number(refundUpi) || 0 },
+            ? { amount: refundAmount }
+            : { cash: refundCash, upi: refundUpi },
         notes,
       })
       setRefundCash(0)

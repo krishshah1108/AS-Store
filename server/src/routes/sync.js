@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const { requireAuth } = require('../middleware/auth');
 const { writeAudit } = require('../utils/audit');
 const { emitChange } = require('../utils/socket');
+const { mobileDigits, mobileError, moneyError, duplicateName } = require('../lib/validate');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -34,9 +35,17 @@ async function applyCustomerMutation(m, userId) {
   const clientUpdatedAt = m.clientUpdatedAt ? new Date(m.clientUpdatedAt) : new Date();
 
   if (m.op === 'create') {
+    const name = String(payload.name || '').trim();
+    if (!name) return { id: m.id, ok: false, error: 'Name is required' };
+    const message = mobileError(payload.mobile);
+    if (message) return { id: m.id, ok: false, error: message };
+    const mobile = mobileDigits(payload.mobile);
+    if (mobile && (await Customer.findOne({ mobile }))) {
+      return { id: m.id, ok: false, error: 'This mobile number is already used' };
+    }
     const customer = await Customer.create({
-      name: String(payload.name || '').trim(),
-      mobile: String(payload.mobile || '').trim(),
+      name,
+      mobile,
       address: String(payload.address || '').trim(),
       notes: String(payload.notes || '').trim(),
       isActive: payload.isActive !== false,
@@ -62,8 +71,16 @@ async function applyCustomerMutation(m, userId) {
     if (!customer) return { id: m.id, ok: false, error: 'Not found' };
 
     const before = customer.toObject();
-    customer.name = String(payload.name ?? customer.name).trim();
-    customer.mobile = String(payload.mobile ?? customer.mobile).trim();
+    const name = String(payload.name ?? customer.name).trim();
+    if (!name) return { id: m.id, ok: false, error: 'Name is required' };
+    const message = mobileError(payload.mobile ?? customer.mobile);
+    if (message) return { id: m.id, ok: false, error: message };
+    const mobile = mobileDigits(payload.mobile ?? customer.mobile);
+    if (mobile && (await Customer.findOne({ mobile, _id: { $ne: customer._id } }))) {
+      return { id: m.id, ok: false, error: 'This mobile number is already used' };
+    }
+    customer.name = name;
+    customer.mobile = mobile;
     customer.address = String(payload.address ?? customer.address).trim();
     customer.notes = String(payload.notes ?? customer.notes).trim();
     if (payload.isActive !== undefined) customer.isActive = Boolean(payload.isActive);
@@ -92,10 +109,17 @@ async function applyProductMutation(m, userId) {
   const clientUpdatedAt = m.clientUpdatedAt ? new Date(m.clientUpdatedAt) : new Date();
 
   if (m.op === 'create') {
+    const name = String(payload.name || '').trim();
+    const priceProblem = moneyError(payload.salePrice, 'Sale price', { required: true });
+    if (!name) return { id: m.id, ok: false, error: 'Name is required' };
+    if (priceProblem) return { id: m.id, ok: false, error: priceProblem };
+    const existing = await Product.find().select('name');
+    if (duplicateName(existing, name)) {
+      return { id: m.id, ok: false, error: 'A product with this name already exists' };
+    }
     const product = await Product.create({
-      name: String(payload.name || '').trim(),
-      unit: String(payload.unit || 'pcs').trim(),
-      salePrice: Number(payload.salePrice) || 0,
+      name,
+      salePrice: Number(payload.salePrice),
       isActive: payload.isActive !== false,
       createdBy: userId,
       updatedBy: userId,
@@ -119,9 +143,18 @@ async function applyProductMutation(m, userId) {
     if (!product) return { id: m.id, ok: false, error: 'Not found' };
 
     const before = product.toObject();
-    product.name = String(payload.name ?? product.name).trim();
-    product.unit = String(payload.unit ?? product.unit).trim();
-    if (payload.salePrice !== undefined) product.salePrice = Number(payload.salePrice);
+    const name = String(payload.name ?? product.name).trim();
+    if (!name) return { id: m.id, ok: false, error: 'Name is required' };
+    const existing = await Product.find({ _id: { $ne: product._id } }).select('name');
+    if (duplicateName(existing, name)) {
+      return { id: m.id, ok: false, error: 'A product with this name already exists' };
+    }
+    if (payload.salePrice !== undefined) {
+      const priceProblem = moneyError(payload.salePrice, 'Sale price', { required: true });
+      if (priceProblem) return { id: m.id, ok: false, error: priceProblem };
+      product.salePrice = Number(payload.salePrice);
+    }
+    product.name = name;
     if (payload.isActive !== undefined) product.isActive = Boolean(payload.isActive);
     product.updatedBy = userId;
     product.updatedAtClient = clientUpdatedAt;

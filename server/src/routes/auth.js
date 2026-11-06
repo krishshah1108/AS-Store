@@ -4,21 +4,27 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
+const { mobileDigits, mobileError } = require('../lib/validate');
 
 const router = express.Router();
 
 router.post(
   '/login',
-  body('mobile').trim().notEmpty(),
+  body('mobile').custom((value) => {
+    const message = mobileError(value, true);
+    if (message) throw new Error(message);
+    return true;
+  }),
   body('password').notEmpty(),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ message: 'Mobile and password required' });
+      return res.status(400).json({ message: errors.array()[0].msg || 'Mobile and password required' });
     }
 
-    const { mobile, password } = req.body;
-    const user = await User.findOne({ mobile: String(mobile).trim() });
+    const mobile = mobileDigits(req.body.mobile);
+    const { password } = req.body;
+    const user = await User.findOne({ mobile });
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid mobile or password' });
     }

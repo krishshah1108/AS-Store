@@ -3,6 +3,7 @@ const Customer = require('../models/Customer');
 const Bill = require('../models/Bill');
 const LedgerEntry = require('../models/LedgerEntry');
 const Payment = require('../models/Payment');
+const { moneyError } = require('../lib/validate');
 
 function round2(n) {
   return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -10,12 +11,14 @@ function round2(n) {
 
 function normalizeItems(items = []) {
   return items.map((item) => {
+    const rateProblem = moneyError(item.rate, 'Rate');
+    if (rateProblem) throw new Error(rateProblem);
     const qty = round2(item.qty);
     const rate = round2(item.rate);
+    if (!(qty > 0)) throw new Error('Each item needs a qty greater than 0');
     return {
       productId: item.productId || undefined,
       name: String(item.name || '').trim(),
-      unit: String(item.unit || 'pcs').trim(),
       qty,
       rate,
       amount: round2(qty * rate),
@@ -24,9 +27,11 @@ function normalizeItems(items = []) {
 }
 
 function computeTotals(items, discount = 0) {
+  const discountProblem = moneyError(discount, 'Discount');
+  if (discountProblem) throw new Error(discountProblem);
   const normalized = normalizeItems(items);
   const subtotal = round2(normalized.reduce((sum, i) => sum + i.amount, 0));
-  const disc = round2(Math.max(0, discount));
+  const disc = round2(discount || 0);
   if (disc > subtotal) {
     throw new Error('Discount cannot exceed subtotal');
   }
@@ -35,12 +40,18 @@ function computeTotals(items, discount = 0) {
 }
 
 function normalizePayments(payments = {}, total) {
+  const cashProblem = moneyError(payments.cash, 'Cash');
+  const upiProblem = moneyError(payments.upi, 'UPI');
+  const creditProblem =
+    payments.credit === undefined || payments.credit === null || payments.credit === ''
+      ? ''
+      : moneyError(payments.credit, 'Credit');
+  if (cashProblem || upiProblem || creditProblem) {
+    throw new Error(cashProblem || upiProblem || creditProblem);
+  }
   const cash = round2(payments.cash || 0);
   const upi = round2(payments.upi || 0);
   let credit = round2(payments.credit || 0);
-  if (cash < 0 || upi < 0 || credit < 0) {
-    throw new Error('Payment amounts cannot be negative');
-  }
 
   const paidNow = round2(cash + upi);
   if (paidNow > total) {
@@ -248,10 +259,12 @@ async function recordCollection({
   const customer = await Customer.findById(customerId);
   if (!customer || !customer.isActive) throw new Error('Valid active customer required');
 
+  const cashProblem = moneyError(amounts?.cash, 'Cash');
+  const upiProblem = moneyError(amounts?.upi, 'UPI');
+  if (cashProblem || upiProblem) throw new Error(cashProblem || upiProblem);
   const cash = round2(amounts?.cash || 0);
   const upi = round2(amounts?.upi || 0);
   const totalAmount = round2(cash + upi);
-  if (cash < 0 || upi < 0) throw new Error('Amounts cannot be negative');
   if (totalAmount <= 0) throw new Error('Enter a cash or UPI amount');
 
   const openBills = await openBillsForCustomer(customerId);
@@ -268,6 +281,7 @@ async function recordCollection({
       throw new Error('Manual allocations exceed payment amount');
     }
     for (const row of allocations) {
+      if (row.amount < 0) throw new Error('Allocation cannot be negative');
       const bill = openBills.find((b) => String(b._id) === String(row.billId));
       if (!bill) throw new Error('Manual allocation references a bill that is not open');
       if (row.amount > bill.dueAmount + 0.001) {
@@ -358,10 +372,18 @@ async function recordRefund({
   const customer = await Customer.findById(customerId);
   if (!customer || !customer.isActive) throw new Error('Valid active customer required');
 
+  if (method === 'credit_adjustment') {
+    const problem = moneyError(amounts?.amount, 'Amount', { required: true, min: 0.01 });
+    if (problem) throw new Error(problem === 'Enter Amount' ? 'Refund amount must be greater than 0' : problem);
+  } else {
+    const cashProblem = moneyError(amounts?.cash, 'Cash');
+    const upiProblem = moneyError(amounts?.upi, 'UPI');
+    if (cashProblem || upiProblem) throw new Error(cashProblem || upiProblem);
+  }
   const cash = round2(amounts?.cash || 0);
   const upi = round2(amounts?.upi || 0);
   const totalAmount =
-    method === 'credit_adjustment' ? round2(amounts?.amount || cash || upi || 0) : round2(cash + upi);
+    method === 'credit_adjustment' ? round2(amounts?.amount || 0) : round2(cash + upi);
 
   if (totalAmount <= 0) throw new Error('Refund amount must be greater than 0');
 

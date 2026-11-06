@@ -1,6 +1,5 @@
 import {
   CalendarBlank,
-  CaretRight,
   ChartLine,
   CloudArrowUp,
   House,
@@ -65,7 +64,14 @@ const links = [
     icon: Package,
     children: [{ to: '/products/new', label: 'Add product', icon: Plus }],
   },
-  { to: '/users', label: 'Users', ownerOnly: true, icon: UsersIcon },
+  {
+    to: '/users',
+    label: 'Users',
+    end: true,
+    ownerOnly: true,
+    icon: UsersIcon,
+    children: [{ to: '/users/new', label: 'Add user', icon: Plus }],
+  },
 ]
 
 function barItem(items, to) {
@@ -83,26 +89,10 @@ function pathInGroup(item, pathname) {
 }
 
 function NavGroup({ item, pathname }) {
-  const [open, setOpen] = useState(() => pathInGroup(item, pathname))
-
-  useEffect(() => {
-    setOpen(pathInGroup(item, pathname))
-  }, [item, pathname])
-
+  const current = pathInGroup(item, pathname)
   return (
-    <div className={`nav-group${open ? ' is-open' : ''}`}>
-      <div className="nav-parent">
-        <NavItem item={item} pathname={pathname} />
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-expanded={open}
-          aria-label={open ? `Hide ${item.label} pages` : `Show ${item.label} pages`}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <CaretRight size={14} weight="bold" />
-        </button>
-      </div>
+    <div className={`nav-group${current ? ' is-open' : ''}`}>
+      <NavItem item={item} pathname={pathname} />
       <div className="nav-children">
         {item.children.map((child) => (
           <NavItem key={child.to} item={child} pathname={pathname} />

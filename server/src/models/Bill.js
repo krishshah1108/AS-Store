@@ -4,7 +4,6 @@ const billItemSchema = new mongoose.Schema(
   {
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     name: { type: String, required: true, trim: true },
-    unit: { type: String, default: 'pcs' },
     qty: { type: Number, required: true, min: 0 },
     rate: { type: Number, required: true, min: 0 },
     amount: { type: Number, required: true, min: 0 },

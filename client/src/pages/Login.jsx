@@ -16,7 +16,7 @@ export default function Login() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const signedIn = await login(mobile.trim(), password)
+      const signedIn = await login(mobile, password)
       toast.success(`Welcome back, ${signedIn?.name || 'there'}`)
     } catch (err) {
       toast.error(err.message || 'Login failed')
@@ -45,9 +45,9 @@ export default function Login() {
             autoFocus
             required
             minLength={10}
-            maxLength={15}
-            pattern="[0-9]{10,15}"
-            title="Enter your mobile number"
+            maxLength={10}
+            pattern="[0-9]{10}"
+            title="Enter a 10-digit mobile number"
             placeholder="Mobile number"
             value={mobile}
             onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}

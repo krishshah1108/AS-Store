@@ -30,7 +30,7 @@ function buildBillText(bill, settings = {}) {
     '',
     ...bill.items.map(
       (item, i) =>
-        `${i + 1}. ${item.name} — ${item.qty} ${item.unit} × ${formatMoney(item.rate)} = ${formatMoney(item.amount)}`
+        `${i + 1}. ${item.name} — ${item.qty} × ${formatMoney(item.rate)} = ${formatMoney(item.amount)}`
     ),
     '',
     `Subtotal: ${formatMoney(bill.subtotal)}`,

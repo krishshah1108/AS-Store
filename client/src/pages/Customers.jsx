@@ -84,6 +84,8 @@ export default function Customers() {
     setSaving(true)
     const payload = {
       ...form,
+      name: form.name.trim(),
+      mobile: form.mobile.trim(),
       updatedAtClient: new Date().toISOString(),
     }
 
@@ -188,6 +190,9 @@ export default function Customers() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
+              maxLength={10}
+              pattern="[0-9]{10}"
+              title="Enter a 10-digit mobile number, or leave it blank"
               placeholder="10-digit mobile number"
               value={form.mobile}
               onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}
