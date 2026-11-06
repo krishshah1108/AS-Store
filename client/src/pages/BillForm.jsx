@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   ArrowUUpLeft,
-  Check,
   FloppyDisk,
   Plus,
   Printer,
@@ -591,11 +590,9 @@ export default function BillForm() {
             <p className="muted">Paid when this bill was made. A later payment does not change the bill amount.</p>
             <div className="pay-quick no-print" role="group" aria-label="Quick payment">
               <button type="button" className={cashOn ? 'is-on' : ''} aria-pressed={cashOn} onClick={() => payAll('cash')}>
-                {cashOn && <Check size={14} weight="bold" />}
                 Cash
               </button>
               <button type="button" className={upiOn ? 'is-on' : ''} aria-pressed={upiOn} onClick={() => payAll('upi')}>
-                {upiOn && <Check size={14} weight="bold" />}
                 UPI
               </button>
               <button type="button" className={creditOn ? 'is-on' : ''} aria-pressed={creditOn} onClick={() => payAll('credit')}>
