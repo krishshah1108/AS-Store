@@ -138,12 +138,9 @@ export default function BillForm() {
   const cashPaid = Number(cash || 0)
   const upiPaid = Number(upi || 0)
   const hasDue = credit > 0.009
-  const cashUdhaar = cashPaid > 0 && upiPaid === 0 && hasDue
-  const upiUdhaar = upiPaid > 0 && cashPaid === 0 && hasDue
-  const cashOn = cashPaid > 0 && !cashUdhaar
-  const upiOn = upiPaid > 0 && !upiUdhaar
-  const creditOn = cashUdhaar || upiUdhaar || (cashPaid === 0 && upiPaid === 0)
-  const creditLabel = cashUdhaar ? 'Cash Udhaar' : upiUdhaar ? 'UPI Udhaar' : 'Udhaar'
+  const cashOn = cashPaid > 0.009
+  const upiOn = upiPaid > 0.009
+  const creditOn = hasDue
 
   const customerOptions = customers.filter((c) => c.isActive !== false || c._id === customerId)
   const productOptions = products.filter((p) => p.isActive !== false)
@@ -173,6 +170,42 @@ export default function BillForm() {
       return
     }
     updateItem(index, { name: text, productId: '', rate: '' })
+  }
+
+  async function createCustomer(name) {
+    const trimmed = name.trim()
+    const byName = customers.find(
+      (customer) => customer.name.trim().toLowerCase() === trimmed.toLowerCase()
+    )
+    const digits = trimmed.replace(/\D/g, '')
+    const byMobile =
+      digits.length === 10 && digits === trimmed
+        ? customers.find((customer) => customer.mobile === digits)
+        : null
+    const match = byName || byMobile
+    if (match) {
+      setCustomerId(match._id)
+      toast.info(`${match.name} is already a customer`)
+      return match
+    }
+    if (!online) {
+      toast.error('The shop server needs to be online to add a customer')
+      return null
+    }
+    try {
+      const created = await customersApi.create({
+        name: trimmed,
+        mobile: digits.length === 10 && digits === trimmed ? digits : '',
+        updatedAtClient: new Date().toISOString(),
+      })
+      setCustomers((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)))
+      setCustomerId(created._id)
+      toast.success(`${created.name} added`)
+      return created
+    } catch (err) {
+      toast.error(err.message || 'Could not add the customer')
+      return null
+    }
   }
 
   async function createProduct(index, draft) {
@@ -483,7 +516,7 @@ export default function BillForm() {
           <div className="bill-meta">
             <SearchSelect
               label="Customer"
-              placeholder="Search customer, then Enter"
+              placeholder="Search a customer, or type a new name"
               options={customerOptions}
               value={customerId}
               getKey={(customer) => customer._id}
@@ -492,6 +525,7 @@ export default function BillForm() {
                 `${customer.mobile || 'No mobile'} · ${formatMoney(customer.balance)}`
               }
               onSelect={(customer) => setCustomerId(customer._id)}
+              onCreate={locked ? undefined : createCustomer}
             />
             <label className="bill-date">
               <span>Bill date</span>
@@ -596,7 +630,7 @@ export default function BillForm() {
                 UPI
               </button>
               <button type="button" className={creditOn ? 'is-on' : ''} aria-pressed={creditOn} onClick={() => payAll('credit')}>
-                {creditLabel}
+                Udhaar
               </button>
             </div>
             <div className="pay-pair">

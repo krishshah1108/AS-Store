@@ -1,4 +1,4 @@
-import { CaretDown, MagnifyingGlass } from '@phosphor-icons/react'
+import { CaretDown, MagnifyingGlass, Plus } from '@phosphor-icons/react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 export default function SearchSelect({
@@ -7,6 +7,7 @@ export default function SearchSelect({
   options,
   value,
   onSelect,
+  onCreate,
   getKey,
   getLabel,
   getHint,
@@ -15,9 +16,15 @@ export default function SearchSelect({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
+  const [saving, setSaving] = useState(false)
   const box = useRef(null)
   const listId = useId()
   const selected = options.find((option) => String(getKey(option)) === String(value || ''))
+  const term = query.trim()
+  const canAdd =
+    Boolean(onCreate) &&
+    term.length > 0 &&
+    !options.some((option) => String(getLabel(option) || '').trim().toLowerCase() === term.toLowerCase())
 
   useEffect(() => {
     function onPointerDown(event) {
@@ -52,6 +59,22 @@ export default function SearchSelect({
     }
   }
 
+  const optionCount = filtered.length + (canAdd ? 1 : 0)
+
+  async function createNew() {
+    if (saving || !onCreate) return
+    setSaving(true)
+    try {
+      const saved = await onCreate(term)
+      if (saved) {
+        setQuery('')
+        setOpen(false)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function onKeyDown(event) {
     if (event.key === 'Escape') {
       setOpen(false)
@@ -60,14 +83,14 @@ export default function SearchSelect({
     if (!open) return
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setActiveIndex((index) => Math.min(filtered.length - 1, index + 1))
+      setActiveIndex((index) => Math.min(Math.max(optionCount - 1, 0), index + 1))
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
       setActiveIndex((index) => Math.max(0, index - 1))
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      const pick = filtered[activeIndex] || filtered[0]
-      if (pick) choose(pick)
+      if (canAdd && activeIndex === filtered.length) createNew()
+      else if (filtered[activeIndex]) choose(filtered[activeIndex])
     }
   }
 
@@ -116,7 +139,22 @@ export default function SearchSelect({
               </li>
             )
           })}
-          {!filtered.length && <li className="search-select-empty">No matches</li>}
+          {canAdd && (
+            <li>
+              <button
+                type="button"
+                role="option"
+                className={`search-select-add${activeIndex === filtered.length ? ' is-hot' : ''}`}
+                disabled={saving}
+                onMouseEnter={() => setActiveIndex(filtered.length)}
+                onClick={createNew}
+              >
+                <Plus size={16} weight="bold" />
+                <span>{saving ? 'Adding…' : `Add “${term}”`}</span>
+              </button>
+            </li>
+          )}
+          {!optionCount && <li className="search-select-empty">No matches</li>}
         </ul>
       )}
     </div>

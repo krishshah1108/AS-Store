@@ -871,6 +871,12 @@ button.profile-card { font: inherit; text-align: left; cursor: pointer; }
 .search-select-menu button.is-active,
 .search-select-menu button.is-hot,
 .search-select-menu button:hover { background: var(--color-primary-soft); }
+.search-select-menu button.search-select-add {
+  justify-content: flex-start;
+  gap: 8px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
 .search-select-empty { padding: 12px; color: var(--color-text-muted); }
 
 .file-drop {
