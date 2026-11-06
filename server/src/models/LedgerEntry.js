@@ -13,6 +13,12 @@ const ledgerEntrySchema = new mongoose.Schema(
     balanceAfter: { type: Number, required: true },
     refType: { type: String },
     refId: { type: mongoose.Schema.Types.ObjectId },
+    bills: [
+      {
+        billId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bill', required: true },
+        billNo: { type: String, required: true },
+      },
+    ],
     note: { type: String, default: '' },
     entryDate: { type: Date, required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

@@ -1,6 +1,7 @@
 import { ArrowLeft, FileXls, Plus } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Breadcrumbs from '../components/Breadcrumbs'
 import ProductImport from '../components/ProductImport'
 import { productsApi } from '../lib/api'
 import { cacheGet, cacheSet, enqueueMutation, newLocalId } from '../lib/storage'
@@ -73,6 +74,7 @@ export default function ProductForm() {
 
   return (
     <div className="page">
+      <Breadcrumbs />
       <header className="page-header">
         <div>
           <Link to="/products" className="back-link">
@@ -80,7 +82,6 @@ export default function ProductForm() {
             All products
           </Link>
           <h1>Add product</h1>
-          <p className="muted">Add a name and sale price to the catalogue.</p>
         </div>
         <div className="row-actions">
           <button type="button" className="btn ghost" onClick={() => setImportOpen((open) => !open)}>

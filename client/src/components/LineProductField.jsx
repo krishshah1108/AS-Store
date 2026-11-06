@@ -5,13 +5,8 @@ import { formatMoney } from '../lib/billShare'
 export default function LineProductField({ name, products, disabled, onNameChange, onPick, onCreate }) {
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [creating, setCreating] = useState(false)
-  const [draftName, setDraftName] = useState('')
-  const [draftPrice, setDraftPrice] = useState('')
   const [saving, setSaving] = useState(false)
-  const [formError, setFormError] = useState('')
   const box = useRef(null)
-  const priceRef = useRef(null)
   const listId = useId()
   const query = String(name || '')
   const term = query.trim().toLowerCase()
@@ -28,15 +23,8 @@ export default function LineProductField({ name, products, disabled, onNameChang
   const highlighted = Math.min(activeIndex, Math.max(optionCount - 1, 0))
 
   useEffect(() => {
-    if (creating) priceRef.current?.focus()
-  }, [creating])
-
-  useEffect(() => {
     function onPointerDown(event) {
-      if (!box.current?.contains(event.target)) {
-        setOpen(false)
-        setCreating(false)
-      }
+      if (!box.current?.contains(event.target)) setOpen(false)
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
@@ -44,8 +32,6 @@ export default function LineProductField({ name, products, disabled, onNameChang
 
   function close() {
     setOpen(false)
-    setCreating(false)
-    setFormError('')
   }
 
   function pick(product) {
@@ -53,16 +39,19 @@ export default function LineProductField({ name, products, disabled, onNameChang
     onPick(product)
   }
 
-  function startCreate() {
-    setCreating(true)
-    setDraftName(query.trim())
-    setDraftPrice('')
-    setFormError('')
-    setOpen(true)
+  async function createNew() {
+    if (saving || disabled) return
+    setSaving(true)
+    try {
+      const saved = await onCreate({ name: query.trim() })
+      if (saved) close()
+    } finally {
+      setSaving(false)
+    }
   }
 
   function onKeyDown(event) {
-    if (disabled || creating) return
+    if (disabled) return
     if (event.key === 'ArrowDown') {
       event.preventDefault()
       setOpen(true)
@@ -75,21 +64,8 @@ export default function LineProductField({ name, products, disabled, onNameChang
       close()
     } else if (event.key === 'Enter' && open && optionCount) {
       event.preventDefault()
-      if (canAdd && highlighted === matches.length) startCreate()
+      if (canAdd && highlighted === matches.length) createNew()
       else if (matches[highlighted]) pick(matches[highlighted])
-    }
-  }
-
-  async function saveCreate() {
-    setSaving(true)
-    setFormError('')
-    try {
-      const saved = await onCreate({ name: draftName.trim(), salePrice: draftPrice })
-      if (saved) close()
-    } catch (err) {
-      setFormError(err.message || 'Could not add the product')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -108,50 +84,12 @@ export default function LineProductField({ name, products, disabled, onNameChang
         }}
         onChange={(event) => {
           onNameChange(event.target.value)
-          setCreating(false)
           setActiveIndex(0)
           setOpen(true)
         }}
         onKeyDown={onKeyDown}
       />
-      {open && !disabled && creating && (
-        <div className="line-product-create" role="dialog" aria-label="Add new product">
-          <strong>Add new product</strong>
-          <label>
-            Name
-            <input value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Product name" />
-          </label>
-          <label>
-            Sale price (₹)
-            <input
-              ref={priceRef}
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={draftPrice}
-              onChange={(event) => setDraftPrice(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  saveCreate()
-                }
-              }}
-            />
-          </label>
-          {formError ? <p className="field-error">{formError}</p> : null}
-          <div className="row-actions">
-            <button type="button" className="btn primary" disabled={saving} onClick={saveCreate}>
-              <Plus size={16} weight="bold" />
-              {saving ? 'Adding…' : 'Add product'}
-            </button>
-            <button type="button" className="btn ghost" onClick={close}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-      {open && !disabled && !creating && (
+      {open && !disabled && (
         <ul className="line-product-menu" id={listId} role="listbox">
           {matches.map((product, index) => (
             <li key={product._id}>
@@ -174,11 +112,12 @@ export default function LineProductField({ name, products, disabled, onNameChang
                 type="button"
                 role="option"
                 className={`line-product-add${highlighted === matches.length ? ' is-hot' : ''}`}
+                disabled={saving}
                 onMouseEnter={() => setActiveIndex(matches.length)}
-                onClick={startCreate}
+                onClick={createNew}
               >
                 <Plus size={16} weight="bold" />
-                <span>Add “{query.trim()}”</span>
+                <span>{saving ? 'Adding…' : `Add “${query.trim()}”`}</span>
               </button>
             </li>
           )}

@@ -1,6 +1,7 @@
 import { MagnifyingGlass, Notebook, PencilSimple, Plus } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import Breadcrumbs from '../components/Breadcrumbs'
 import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
 import StatusSwitch from '../components/StatusSwitch'
@@ -157,10 +158,10 @@ export default function Customers() {
 
   return (
     <div className="page">
+      <Breadcrumbs />
       <header className="page-header">
         <div>
           <h1>Customers</h1>
-          <p className="muted">Search, add, and edit customer masters.</p>
         </div>
         <Link to="/customers/new" className="btn primary">
           <Plus size={16} weight="bold" />

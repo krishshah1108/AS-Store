@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ArrowUUpLeft,
+  Check,
   FloppyDisk,
   Plus,
   Printer,
@@ -8,7 +9,8 @@ import {
   WhatsappLogo,
 } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import Breadcrumbs from '../components/Breadcrumbs'
 import LineProductField from '../components/LineProductField'
 import LogoLoader from '../components/LogoLoader'
 import SearchSelect from '../components/SearchSelect'
@@ -27,8 +29,8 @@ const emptyItem = () => ({
 
 export default function BillForm() {
   const { id } = useParams()
+  const { hash } = useLocation()
   const isNew = !id || id === 'new'
-  const navigate = useNavigate()
   const { bump, online } = useSync()
   const toast = useToast()
 
@@ -36,7 +38,6 @@ export default function BillForm() {
   const [products, setProducts] = useState([])
   const [settings, setSettings] = useState({})
   const [customerId, setCustomerId] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [billDate, setBillDate] = useState(todayInput())
   const [items, setItems] = useState([emptyItem()])
   const [discount, setDiscount] = useState(0)
@@ -50,6 +51,12 @@ export default function BillForm() {
   const [billReady, setBillReady] = useState(isNew)
   const [returnQty, setReturnQty] = useState({})
   const [lastBill, setLastBill] = useState(null)
+  const [billPayments, setBillPayments] = useState([])
+  const [payCash, setPayCash] = useState('')
+  const [payUpi, setPayUpi] = useState('')
+  const [payDate, setPayDate] = useState(todayInput())
+  const [payNote, setPayNote] = useState('')
+  const [receiving, setReceiving] = useState(false)
   const locked = billMeta?.status === 'cancelled' || billMeta?.status === 'returned'
 
   useEffect(() => {
@@ -79,11 +86,11 @@ export default function BillForm() {
     }
     let active = true
     setBillReady(false)
-    billsApi
-      .get(id)
-      .then((bill) => {
+    Promise.all([billsApi.get(id), billsApi.payments(id)])
+      .then(([bill, paymentData]) => {
         if (!active) return
         setBillMeta(bill)
+        setBillPayments(paymentData.payments || [])
         setCustomerId(bill.customerId?._id || bill.customerId)
         setBillDate(new Date(bill.billDate).toISOString().slice(0, 10))
         const lockedBill = bill.status === 'cancelled' || bill.status === 'returned'
@@ -116,6 +123,13 @@ export default function BillForm() {
     }
   }, [id, isNew, toast])
 
+  useEffect(() => {
+    const target = hash === '#payments' ? 'payments' : hash === '#return' ? 'return' : ''
+    if (!target || !billReady) return undefined
+    document.getElementById(target)?.scrollIntoView({ block: 'start' })
+    return undefined
+  }, [hash, billReady])
+
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + Number(item.qty || 0) * Number(item.rate || 0), 0),
     [items]
@@ -124,14 +138,13 @@ export default function BillForm() {
   const credit = Math.max(0, total - Number(cash || 0) - Number(upi || 0))
   const cashPaid = Number(cash || 0)
   const upiPaid = Number(upi || 0)
-  const payMode =
-    cashPaid > 0 && upiPaid === 0 && Math.abs(cashPaid - total) < 0.01
-      ? 'cash'
-      : upiPaid > 0 && cashPaid === 0 && Math.abs(upiPaid - total) < 0.01
-        ? 'upi'
-        : cashPaid === 0 && upiPaid === 0
-          ? 'credit'
-          : ''
+  const hasDue = credit > 0.009
+  const cashUdhaar = cashPaid > 0 && upiPaid === 0 && hasDue
+  const upiUdhaar = upiPaid > 0 && cashPaid === 0 && hasDue
+  const cashOn = cashPaid > 0 && !cashUdhaar
+  const upiOn = upiPaid > 0 && !upiUdhaar
+  const creditOn = cashUdhaar || upiUdhaar || (cashPaid === 0 && upiPaid === 0)
+  const creditLabel = cashUdhaar ? 'Cash Udhaar' : upiUdhaar ? 'UPI Udhaar' : 'Udhaar'
 
   const customerOptions = customers.filter((c) => c.isActive !== false || c._id === customerId)
   const productOptions = products.filter((p) => p.isActive !== false)
@@ -140,12 +153,17 @@ export default function BillForm() {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)))
   }
 
-  function chooseProduct(index, product) {
-    const result = placeBillProduct(items, index, product)
-    setItems(result.items)
-    if (result.addedAgain) {
-      toast.success(`${product.name} is already on this bill. Qty is now ${result.qty}`)
-    }
+  function chooseProduct(index, product, options = {}) {
+    let notice = ''
+    setItems((prev) => {
+      const result = placeBillProduct(prev, index, product)
+      if (result.addedAgain) notice = `${product.name} is already on this bill. Qty is now ${result.qty}`
+      if (options.blankRate && !result.addedAgain) {
+        return result.items.map((item, i) => (i === index ? { ...item, rate: '' } : item))
+      }
+      return result.items
+    })
+    if (notice) toast.success(notice)
   }
 
   function typeProductName(index, text) {
@@ -166,16 +184,49 @@ export default function BillForm() {
       toast.info(`${match.name} is already in the catalogue`)
       return match
     }
-    if (!online) throw new Error('The shop server needs to be online to add a product')
-    const created = await productsApi.create({
-      name,
-      salePrice: draft.salePrice,
-      updatedAtClient: new Date().toISOString(),
-    })
-    setProducts((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)))
-    chooseProduct(index, created)
-    toast.success(`${created.name} added to the catalogue`)
-    return created
+    if (!online) {
+      toast.error('The shop server needs to be online to add a product')
+      return null
+    }
+    const raw = items[index]?.rate
+    const typedRate = raw === '' || raw == null ? null : Number(raw)
+    if (typedRate != null && (!Number.isFinite(typedRate) || typedRate < 0)) {
+      toast.error('Rate cannot be negative')
+      return null
+    }
+    try {
+      const created = await productsApi.create({
+        name,
+        salePrice: typedRate == null ? 0 : typedRate,
+        updatedAtClient: new Date().toISOString(),
+      })
+      setProducts((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)))
+      chooseProduct(index, created, { blankRate: typedRate == null })
+      toast.success(`${created.name} added to the catalogue`)
+      return created
+    } catch (err) {
+      toast.error(err.message || 'Could not add the product')
+      return null
+    }
+  }
+
+  async function rememberRate(index) {
+    const item = items[index]
+    if (!item?.productId || !online) return
+    const product = products.find((row) => String(row._id) === String(item.productId))
+    if (!product || Number(product.salePrice) !== 0) return
+    if (item.rate === '' || item.rate == null) return
+    const price = Number(item.rate)
+    if (!Number.isFinite(price) || price <= 0) return
+    try {
+      const updated = await productsApi.update(product._id, {
+        salePrice: price,
+        updatedAtClient: new Date().toISOString(),
+      })
+      setProducts((list) => list.map((row) => (String(row._id) === String(updated._id) ? updated : row)))
+    } catch (err) {
+      toast.error(err.message)
+    }
   }
 
   function addLine() {
@@ -278,17 +329,41 @@ export default function BillForm() {
     openWhatsAppShare(billMeta, settings)
   }
 
-  async function handleDelete() {
-    if (!billMeta || saving) return
-    setSaving(true)
+  async function handleReceive(event) {
+    event.preventDefault()
+    if (!billMeta || locked) return
+    const cashAmount = Number(payCash || 0)
+    const upiAmount = Number(payUpi || 0)
+    if (cashAmount < 0 || upiAmount < 0) {
+      toast.error('Payment cannot be negative')
+      return
+    }
+    if (cashAmount + upiAmount <= 0) {
+      toast.error('Enter a cash or UPI amount')
+      return
+    }
+    if (cashAmount + upiAmount > Number(billMeta.dueAmount || 0) + 0.009) {
+      toast.error('Payment is more than the pending amount')
+      return
+    }
+    setReceiving(true)
     try {
-      await billsApi.remove(billMeta._id)
+      const result = await billsApi.receivePayment(id, {
+        paymentDate: payDate,
+        amounts: { cash: cashAmount, upi: upiAmount },
+        notes: payNote,
+      })
+      setBillMeta(result.bill)
+      setBillPayments(result.payments || [])
+      setPayCash('')
+      setPayUpi('')
+      setPayNote('')
       bump()
-      toast.success(`Bill ${billMeta.billNo} deleted`)
-      navigate('/bills')
+      toast.success('Payment recorded')
     } catch (err) {
       toast.error(err.message)
-      setSaving(false)
+    } finally {
+      setReceiving(false)
     }
   }
 
@@ -344,6 +419,7 @@ export default function BillForm() {
 
   return (
     <div className="page bill-page">
+      <Breadcrumbs className="no-print" />
       <header className="page-header no-print">
         <div>
           <Link to="/bills" className="back-link">
@@ -351,7 +427,9 @@ export default function BillForm() {
             All bills
           </Link>
           <h1>{isNew ? 'Add bill' : billMeta?.billNo || 'Edit bill'}</h1>
-          <p className="muted">Type a product on the line. Pick a match, or add a new one with its price.</p>
+          {!isNew && billMeta && (
+            <p className="muted">Created by {billMeta.createdBy?.name || 'Unknown'}</p>
+          )}
         </div>
         {!isNew && billMeta && (
           <div className="row-actions">
@@ -365,10 +443,6 @@ export default function BillForm() {
             <button type="button" className="btn ghost" onClick={handleWhatsApp}>
               <WhatsappLogo size={16} weight="bold" />
               WhatsApp
-            </button>
-            <button type="button" className="btn ghost danger-text" disabled={saving} onClick={() => setConfirmDelete(true)}>
-              <Trash size={16} weight="bold" />
-              Delete bill
             </button>
           </div>
         )}
@@ -476,6 +550,7 @@ export default function BillForm() {
                     placeholder="Rate"
                     value={item.rate}
                     onChange={(e) => updateItem(index, { rate: e.target.value })}
+                    onBlur={() => rememberRate(index)}
                   />
                 </label>
                 <div className="line-amount">
@@ -513,15 +588,19 @@ export default function BillForm() {
 
           <section className="bill-pay">
             <h2>Payment</h2>
+            <p className="muted">Paid when this bill was made. A later payment does not change the bill amount.</p>
             <div className="pay-quick no-print" role="group" aria-label="Quick payment">
-              <button type="button" className={payMode === 'cash' ? 'is-on' : ''} onClick={() => payAll('cash')}>
+              <button type="button" className={cashOn ? 'is-on' : ''} aria-pressed={cashOn} onClick={() => payAll('cash')}>
+                {cashOn && <Check size={14} weight="bold" />}
                 Cash
               </button>
-              <button type="button" className={payMode === 'upi' ? 'is-on' : ''} onClick={() => payAll('upi')}>
+              <button type="button" className={upiOn ? 'is-on' : ''} aria-pressed={upiOn} onClick={() => payAll('upi')}>
+                {upiOn && <Check size={14} weight="bold" />}
                 UPI
               </button>
-              <button type="button" className={payMode === 'credit' ? 'is-on' : ''} onClick={() => payAll('credit')}>
-                Udhaar
+              <button type="button" className={creditOn ? 'is-on' : ''} aria-pressed={creditOn} onClick={() => payAll('credit')}>
+                {creditOn && <Check size={14} weight="bold" />}
+                {creditLabel}
               </button>
             </div>
             <div className="pay-pair">
@@ -589,10 +668,81 @@ export default function BillForm() {
         </aside>
       </form>
 
+      {!isNew && billMeta && (
+        <section className="panel no-print" id="payments">
+          <h2>Payments</h2>
+          <p className="muted">
+            Bill amount {formatMoney(billMeta.total)} · Pending {formatMoney(billMeta.dueAmount)}
+          </p>
+          {billPayments.length ? (
+            <ul className="payment-list">
+              {billPayments.map((payment) => (
+                <li key={payment.id}>
+                  <div>
+                    <strong>{payment.kind === 'billing' ? 'With the bill' : payment.paymentNo}</strong>
+                    <p className="muted">
+                      {formatDate(payment.paymentDate)}
+                      {payment.notes ? ` · ${payment.notes}` : ''}
+                    </p>
+                  </div>
+                  <strong>{formatMoney(payment.totalAmount)}</strong>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No money was taken with this bill yet.</p>
+          )}
+          {!locked && Number(billMeta.dueAmount) > 0 && (
+            <form className="bill-receive" onSubmit={handleReceive}>
+              <h3>Receive payment</h3>
+              <p className="muted">This records the pending amount. It does not change the bill.</p>
+              <div className="form-row">
+                <label>
+                  Date
+                  <input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
+                </label>
+                <label>
+                  Cash
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={payCash}
+                    onChange={(e) => setPayCash(e.target.value)}
+                  />
+                </label>
+                <label>
+                  UPI
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={payUpi}
+                    onChange={(e) => setPayUpi(e.target.value)}
+                  />
+                </label>
+              </div>
+              <label>
+                Note
+                <input
+                  placeholder="Optional"
+                  value={payNote}
+                  onChange={(e) => setPayNote(e.target.value)}
+                />
+              </label>
+              <button className="btn primary" type="submit" disabled={receiving}>
+                {receiving ? 'Saving…' : 'Receive payment'}
+              </button>
+            </form>
+          )}
+        </section>
+      )}
+
       {!isNew && billMeta && !locked && (
-        <section className="panel no-print">
+        <section className="panel no-print" id="return">
           <h2>Product return</h2>
-          <p className="muted">Enter qty to return per line. Surplus paid amount becomes advance.</p>
           <div className="table-wrap">
             <table>
               <thead>
@@ -661,31 +811,6 @@ export default function BillForm() {
         </section>
       )}
 
-      {confirmDelete && billMeta && (
-        <div className="modal-backdrop" onClick={() => setConfirmDelete(false)}>
-          <div
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-bill-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="delete-bill-title">Delete {billMeta.billNo}?</h2>
-            <p className="muted">
-              This removes the bill and updates the customer balance. The deletion cannot be undone.
-            </p>
-            <div className="row-actions">
-              <button type="button" className="btn ghost" onClick={() => setConfirmDelete(false)}>
-                Keep bill
-              </button>
-              <button type="button" className="btn danger" disabled={saving} onClick={handleDelete}>
-                <Trash size={16} weight="bold" />
-                {saving ? 'Deleting…' : 'Delete bill'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

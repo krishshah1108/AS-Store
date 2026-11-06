@@ -18,6 +18,19 @@ export function formatDate(value) {
   }).format(date)
 }
 
+export function formatDateTime(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
+}
+
 function buildBillText(bill, settings = {}) {
   const customer = bill.customerId || {}
   const lines = [
@@ -51,4 +64,15 @@ export function openWhatsAppShare(bill, settings = {}) {
     ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
     : `https://wa.me/?text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+export function downloadBill(bill, settings = {}) {
+  const text = buildBillText(bill, settings)
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${bill.billNo || 'bill'}.txt`
+  link.click()
+  URL.revokeObjectURL(url)
 }

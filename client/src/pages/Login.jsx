@@ -29,7 +29,6 @@ export default function Login() {
     <div className="login-page">
       <form className="login-card" method="post" onSubmit={onSubmit} autoComplete="on">
         <Logo />
-        <p className="muted">Sign in with mobile number and password.</p>
         <label>
           <span className="label-with-icon">
             <Phone size={16} weight="duotone" /> Mobile

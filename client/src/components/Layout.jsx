@@ -108,7 +108,7 @@ function NavItem({ item, pathname, compact }) {
   return (
     <NavLink
       to={item.to}
-      end={item.end}
+      end={compact && item.to === '/products' ? false : item.end}
       className={({ isActive }) => [active(isActive), compact && item.accent ? 'bottom-add' : ''].filter(Boolean).join(' ')}
     >
       <Icon size={compact ? 22 : 20} weight={item.accent ? 'bold' : 'regular'} />
@@ -328,7 +328,6 @@ export default function Layout() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="logout-title">Log out?</h2>
-            <p className="muted">Sign in again with your mobile number and password.</p>
             <div className="row-actions">
               <button type="button" className="btn ghost" onClick={() => setConfirmLogout(false)}>
                 Stay

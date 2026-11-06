@@ -4,6 +4,8 @@ const Bill = require('../models/Bill');
 const LedgerEntry = require('../models/LedgerEntry');
 const Payment = require('../models/Payment');
 const { moneyError } = require('../lib/validate');
+const { writeAudit } = require('../utils/audit');
+const { billChanges } = require('./billAudit');
 
 function round2(n) {
   return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -93,7 +95,26 @@ async function nextPaymentNo() {
   return `ASP-${year}-${String(seq).padStart(4, '0')}`;
 }
 
-async function postLedger({ customerId, type, debit = 0, credit = 0, refType, refId, note, entryDate, userId }) {
+function billRefs(bill) {
+  if (!bill?._id || !bill.billNo) return [];
+  return [{ billId: bill._id, billNo: bill.billNo }];
+}
+
+async function allocationRefs(allocations) {
+  const ids = [];
+  for (const row of allocations || []) {
+    const id = row?.billId;
+    if (id && !ids.some((item) => String(item) === String(id))) ids.push(id);
+  }
+  if (!ids.length) return [];
+  const found = await Bill.find({ _id: { $in: ids } }).select('billNo').lean();
+  const numbers = new Map(found.map((bill) => [String(bill._id), bill.billNo]));
+  return ids
+    .filter((id) => numbers.has(String(id)))
+    .map((id) => ({ billId: id, billNo: numbers.get(String(id)) }));
+}
+
+async function postLedger({ customerId, type, debit = 0, credit = 0, refType, refId, bills = [], note, entryDate, userId }) {
   const customer = await Customer.findById(customerId);
   if (!customer) throw new Error('Customer not found');
 
@@ -109,10 +130,31 @@ async function postLedger({ customerId, type, debit = 0, credit = 0, refType, re
     balanceAfter: nextBalance,
     refType,
     refId,
+    bills,
     note,
     entryDate,
     createdBy: userId,
   });
+}
+
+function atBillPaid(bill) {
+  return round2((Number(bill.payments?.cash) || 0) + (Number(bill.payments?.upi) || 0));
+}
+
+function settleBillAmounts(total, atBillPaidAmount, laterCollected) {
+  const billTotal = round2(total);
+  const atBill = round2(atBillPaidAmount);
+  const later = round2(laterCollected);
+  if (atBill < -0.001 || later < -0.001) throw new Error('Payment cannot be negative');
+  if (round2(atBill + later) > billTotal + 0.009) {
+    throw new Error('Bill total cannot be less than the amount already received');
+  }
+  const paidAmount = round2(atBill + later);
+  return {
+    paymentsCredit: round2(billTotal - atBill),
+    paidAmount,
+    dueAmount: round2(billTotal - paidAmount),
+  };
 }
 
 async function reverseBillLedger(bill, userId, note) {
@@ -123,18 +165,21 @@ async function reverseBillLedger(bill, userId, note) {
       credit: bill.total,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: note || `Reversal of bill ${bill.billNo}`,
       entryDate: bill.billDate,
       userId,
     });
   }
-  if (bill.paidAmount > 0) {
+  const originalPaid = atBillPaid(bill);
+  if (originalPaid > 0) {
     await postLedger({
       customerId: bill.customerId,
       type: 'reversal',
-      debit: bill.paidAmount,
+      debit: originalPaid,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: note || `Reversal of payment on ${bill.billNo}`,
       entryDate: bill.billDate,
       userId,
@@ -150,19 +195,22 @@ async function applyBillLedger(bill, userId) {
       debit: bill.total,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: `Bill ${bill.billNo}`,
       entryDate: bill.billDate,
       userId,
     });
   }
 
-  if (bill.paidAmount > 0) {
+  const originalPaid = atBillPaid(bill);
+  if (originalPaid > 0) {
     await postLedger({
       customerId: bill.customerId,
       type: 'payment',
-      credit: bill.paidAmount,
+      credit: originalPaid,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: `Payment on ${bill.billNo} (cash ${bill.payments.cash} / UPI ${bill.payments.upi})`,
       entryDate: bill.billDate,
       userId,
@@ -208,10 +256,22 @@ async function applyAllocationsToBills(allocations, userId) {
     if (amount > bill.dueAmount + 0.001) {
       throw new Error(`Allocation ₹${amount} exceeds due ₹${bill.dueAmount} on ${bill.billNo}`);
     }
+    const before = snapshotBill(bill);
     bill.dueAmount = round2(bill.dueAmount - amount);
     bill.paidAmount = round2(bill.paidAmount + amount);
     bill.updatedBy = userId;
     await bill.save();
+    const after = snapshotBill(bill);
+    await writeAudit({
+      action: 'collect',
+      entityType: 'Bill',
+      entityId: bill._id,
+      before,
+      after,
+      changes: billChanges(before, after),
+      summary: `Recorded ₹${amount.toFixed(2)} against this bill`,
+      performedBy: userId,
+    });
   }
 }
 
@@ -236,6 +296,7 @@ async function applyAdvanceToOpenBills(customer, userId, entryDate) {
     credit: applied,
     refType: 'Customer',
     refId: customer._id,
+    bills: await allocationRefs(allocations),
     note: `Advance applied to bills (FIFO) ₹${applied}`,
     entryDate: entryDate || new Date(),
     userId,
@@ -333,6 +394,7 @@ async function recordCollection({
       credit: appliedToDues,
       refType: 'Payment',
       refId: payment._id,
+      bills: await allocationRefs(allocations),
       note: `Collection ${payment.paymentNo} (cash ${cash} / UPI ${upi})`,
       entryDate: paymentDate,
       userId,
@@ -489,6 +551,7 @@ async function cancelBill(billId, userId, reason = '') {
       credit: bill.total,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: `Cancel bill ${bill.billNo}`,
       entryDate: new Date(),
       userId,
@@ -501,6 +564,7 @@ async function cancelBill(billId, userId, reason = '') {
       debit: originalPaid,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: `Cancel bill payment reverse ${bill.billNo}`,
       entryDate: new Date(),
       userId,
@@ -517,6 +581,7 @@ async function cancelBill(billId, userId, reason = '') {
       debit: laterCollected,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: `Reclass collection on cancelled ${bill.billNo} to advance`,
       entryDate: new Date(),
       userId,
@@ -637,6 +702,7 @@ async function returnBillItems(billId, { items: returnItems, notes = '' }, userI
     credit: returnValue,
     refType: 'Bill',
     refId: bill._id,
+    bills: billRefs(bill),
     note: notes || `Return on ${bill.billNo} ₹${returnValue}`,
     entryDate: new Date(),
     userId,
@@ -656,6 +722,7 @@ async function returnBillItems(billId, { items: returnItems, notes = '' }, userI
       balanceAfter: 0,
       refType: 'Bill',
       refId: bill._id,
+      bills: billRefs(bill),
       note: `Return surplus ₹${adv} moved to advance`,
       entryDate: new Date(),
       createdBy: userId,
@@ -673,13 +740,132 @@ async function returnBillItems(billId, { items: returnItems, notes = '' }, userI
   bill.revisions[bill.revisions.length - 1].after = snapshotBill(bill);
   await bill.save();
 
-  return { bill };
+  return { bill, before };
+}
+
+async function laterCollectedForBill(billId) {
+  const rows = await Payment.find({ kind: 'collection', 'allocations.billId': billId }).select('allocations');
+  let sum = 0;
+  for (const row of rows) {
+    for (const allocation of row.allocations) {
+      if (String(allocation.billId) === String(billId)) sum += Number(allocation.amount) || 0;
+    }
+  }
+  return round2(sum);
+}
+
+async function listBillPayments(bill) {
+  const rows = await Payment.find({ kind: 'collection', 'allocations.billId': bill._id }).sort({
+    paymentDate: 1,
+    createdAt: 1,
+  });
+  const payments = [];
+  const atBill = atBillPaid(bill);
+  if (atBill > 0) {
+    payments.push({
+      id: `bill-${bill._id}`,
+      kind: 'billing',
+      paymentNo: bill.billNo,
+      paymentDate: bill.billDate,
+      totalAmount: atBill,
+      notes: 'Received with the bill',
+    });
+  }
+  for (const row of rows) {
+    const allocated = row.allocations.find((item) => String(item.billId) === String(bill._id));
+    payments.push({
+      id: String(row._id),
+      kind: 'payment',
+      paymentNo: row.paymentNo,
+      paymentDate: row.paymentDate,
+      totalAmount: round2(allocated?.amount || 0),
+      notes: row.notes || '',
+    });
+  }
+  return payments;
+}
+
+async function receiveBillPayment(billId, { paymentDate, amounts, notes }, userId) {
+  const bill = await Bill.findById(billId);
+  if (!bill) throw new Error('Bill not found');
+  if (bill.status !== 'final') throw new Error('Only an open bill can take a payment');
+
+  const cashProblem = moneyError(amounts?.cash, 'Cash');
+  const upiProblem = moneyError(amounts?.upi, 'UPI');
+  if (cashProblem || upiProblem) throw new Error(cashProblem || upiProblem);
+  const cash = round2(amounts?.cash || 0);
+  const upi = round2(amounts?.upi || 0);
+  const amount = round2(cash + upi);
+  if (amount <= 0) throw new Error('Enter a cash or UPI amount');
+  if (amount > round2(bill.dueAmount) + 0.001) {
+    throw new Error('Payment is more than the pending amount');
+  }
+
+  const before = snapshotBill(bill);
+  const billTotal = bill.total;
+  const originalCash = round2(bill.payments?.cash || 0);
+  const originalUpi = round2(bill.payments?.upi || 0);
+  const originalCredit = round2(bill.payments?.credit || 0);
+
+  bill.paidAmount = round2(bill.paidAmount + amount);
+  bill.dueAmount = round2(bill.dueAmount - amount);
+  bill.payments.cash = originalCash;
+  bill.payments.upi = originalUpi;
+  bill.payments.credit = originalCredit;
+  bill.total = billTotal;
+  bill.updatedBy = userId;
+  await bill.save();
+
+  const paymentNo = await nextPaymentNo();
+  const method = cash > 0 && upi > 0 ? 'mixed' : upi > 0 ? 'upi' : 'cash';
+  const payment = await Payment.create({
+    paymentNo,
+    customerId: bill.customerId,
+    paymentDate: paymentDate || new Date(),
+    kind: 'collection',
+    method,
+    amounts: { cash, upi },
+    totalAmount: amount,
+    allocationMode: 'manual',
+    allocations: [{ billId: bill._id, amount }],
+    advanceDelta: 0,
+    notes: String(notes || '').trim(),
+    createdBy: userId,
+  });
+
+  await postLedger({
+    customerId: bill.customerId,
+    type: 'payment',
+    credit: amount,
+    refType: 'Payment',
+    refId: payment._id,
+    bills: billRefs(bill),
+    note: notes || `Payment ${paymentNo} on ${bill.billNo}`,
+    entryDate: payment.paymentDate,
+    userId,
+  });
+
+  const after = snapshotBill(bill);
+  await writeAudit({
+    action: 'collect',
+    entityType: 'Bill',
+    entityId: bill._id,
+    before,
+    after,
+    changes: billChanges(before, after).filter((change) => change.field === 'paidAmount' || change.field === 'dueAmount'),
+    summary: `Received ₹${amount.toFixed(2)} against this bill`,
+    performedBy: userId,
+  });
+
+  return { bill, payment };
 }
 
 module.exports = {
   round2,
   computeTotals,
   normalizePayments,
+  settleBillAmounts,
+  atBillPaid,
   nextBillNo,
   reverseBillLedger,
   applyBillLedger,
@@ -689,4 +875,7 @@ module.exports = {
   recordRefund,
   deleteBill,
   returnBillItems,
+  laterCollectedForBill,
+  listBillPayments,
+  receiveBillPayment,
 };

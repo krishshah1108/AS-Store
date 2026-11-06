@@ -48,7 +48,14 @@ const billSchema = new mongoose.Schema(
     cancelReason: { type: String, default: '' },
     returnNote: { type: String, default: '' },
     revisions: [revisionSchema],
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      immutable: true,
+      required: function createdByRequired() {
+        return this.isNew
+      },
+    },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
@@ -57,5 +64,6 @@ const billSchema = new mongoose.Schema(
 billSchema.index({ billDate: -1 });
 billSchema.index({ customerId: 1, billDate: -1 });
 billSchema.index({ status: 1 });
+billSchema.index({ createdBy: 1, billDate: -1 });
 
 module.exports = mongoose.model('Bill', billSchema);

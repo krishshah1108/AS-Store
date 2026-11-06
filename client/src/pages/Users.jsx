@@ -1,6 +1,7 @@
 import { Plus } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import Breadcrumbs from '../components/Breadcrumbs'
 import LogoLoader from '../components/LogoLoader'
 import Pager from '../components/Pager'
 import StatusSwitch from '../components/StatusSwitch'
@@ -61,10 +62,10 @@ export default function Users() {
 
   return (
     <div className="page">
+      <Breadcrumbs />
       <header className="page-header">
         <div>
           <h1>Users</h1>
-          <p className="muted">Turn access on or off. Add a login from the sidebar or the button.</p>
         </div>
         <Link to="/users/new" className="btn primary">
           <Plus size={16} weight="bold" />

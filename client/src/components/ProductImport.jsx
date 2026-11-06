@@ -195,7 +195,6 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
   return (
     <section className="panel form editor">
       <h2>Import products</h2>
-      <p className="muted">Upload an Excel or CSV file, match each product field to a column, then import.</p>
       <label className="file-drop">
         <FileXls size={36} weight="duotone" />
         <strong>{fileName || 'Choose an Excel or CSV file'}</strong>

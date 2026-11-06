@@ -1,6 +1,7 @@
 import { ArrowLeft, Plus } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Breadcrumbs from '../components/Breadcrumbs'
 import { customersApi } from '../lib/api'
 import { cacheGet, cacheSet, enqueueMutation, newLocalId } from '../lib/storage'
 import { useSync } from '../context/SyncContext'
@@ -66,7 +67,6 @@ export default function CustomerForm() {
             All customers
           </Link>
           <h1>Add customer</h1>
-          <p className="muted">Add a customer name, mobile, and address.</p>
         </div>
       </header>
 

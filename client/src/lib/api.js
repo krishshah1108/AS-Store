@@ -85,17 +85,14 @@ export const billsApi = {
   remove: (id) => api(`/api/bills/${id}`, { method: 'DELETE' }),
   returnItems: (id, body) =>
     api(`/api/bills/${id}/return`, { method: 'POST', body: JSON.stringify(body) }),
-}
-
-export const paymentsApi = {
-  collect: (body) => api('/api/payments/collect', { method: 'POST', body: JSON.stringify(body) }),
-  refund: (body) => api('/api/payments/refund', { method: 'POST', body: JSON.stringify(body) }),
-  applyAdvance: (customerId) =>
-    api(`/api/payments/apply-advance/${customerId}`, { method: 'POST', body: '{}' }),
+  activity: (id) => api(`/api/bills/${id}/activity`),
+  payments: (id) => api(`/api/bills/${id}/payments`),
+  receivePayment: (id, body) =>
+    api(`/api/bills/${id}/payments`, { method: 'POST', body: JSON.stringify(body) }),
 }
 
 export const ledgerApi = {
-  customer: (customerId) => api(`/api/ledger/customer/${customerId}`),
+  list: (params = {}) => api(withQuery('/api/ledger', params)),
 }
 
 export const reportsApi = {

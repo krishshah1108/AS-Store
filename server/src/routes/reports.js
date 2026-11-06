@@ -109,9 +109,57 @@ async function summarizePeriod(start, end) {
   };
 }
 
+function dayKey(date) {
+  const d = new Date(date);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+async function salesTrend(days = 7) {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  const bills = await Bill.find({
+    billDate: { $gte: start, $lte: end },
+    status: { $in: ['final', 'returned'] },
+  }).select('billDate total');
+
+  const totals = new Map();
+  for (const bill of bills) {
+    const key = dayKey(bill.billDate);
+    totals.set(key, round2((totals.get(key) || 0) + bill.total));
+  }
+
+  const trend = [];
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const key = dayKey(date);
+    trend.push({
+      date: key,
+      label: date.toLocaleDateString('en-GB', { weekday: 'short' }),
+      sales: totals.get(key) || 0,
+    });
+  }
+  return trend;
+}
+
 router.get('/dashboard', async (req, res) => {
   const { start, end } = rangeBounds();
   const summary = await summarizePeriod(start, end);
+  const trend = await salesTrend(7);
+  const recentBills = await Bill.find({
+    billDate: { $gte: start, $lte: end },
+    status: { $in: ['final', 'returned'] },
+  })
+    .populate('customerId', 'name')
+    .sort({ createdAt: -1 })
+    .limit(8)
+    .select('billNo customerId total dueAmount');
 
   const settings = await Settings.findOne();
   const overdueDays = settings?.overdueDays || 30;
@@ -138,6 +186,8 @@ router.get('/dashboard', async (req, res) => {
     overdueDays,
     overdueBills,
     pendingCustomers,
+    trend,
+    recentBills,
   });
 });
 

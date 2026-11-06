@@ -1,6 +1,7 @@
 import { ArrowLeft, LockKey, Phone, Plus } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import Breadcrumbs from '../components/Breadcrumbs'
 import PasswordInput from '../components/PasswordInput'
 import { usersApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -40,7 +41,6 @@ export default function UserForm() {
             All users
           </Link>
           <h1>Add user</h1>
-          <p className="muted">Create an owner or an employee login.</p>
         </div>
       </header>
 
