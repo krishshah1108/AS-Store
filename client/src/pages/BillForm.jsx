@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ArrowUUpLeft,
   FloppyDisk,
+  Plus,
   Printer,
   Trash,
   WhatsappLogo,
@@ -48,6 +49,7 @@ export default function BillForm() {
   const [catalogReady, setCatalogReady] = useState(false)
   const [billReady, setBillReady] = useState(isNew)
   const [returnQty, setReturnQty] = useState({})
+  const [lastBill, setLastBill] = useState(null)
   const locked = billMeta?.status === 'cancelled' || billMeta?.status === 'returned'
 
   useEffect(() => {
@@ -176,8 +178,23 @@ export default function BillForm() {
     return created
   }
 
+  function addLine() {
+    setItems((prev) => [...prev, emptyItem()])
+  }
+
   function removeItem(index) {
-    setItems((prev) => (prev.length === 1 ? [emptyItem()] : prev.filter((_, i) => i !== index)))
+    setItems((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function blankBill() {
+    setCustomerId('')
+    setBillDate(todayInput())
+    setItems([emptyItem()])
+    setDiscount(0)
+    setCash(0)
+    setUpi(0)
+    setNotes('')
+    setReason('')
   }
 
   function payAll(mode) {
@@ -232,7 +249,15 @@ export default function BillForm() {
       bump()
       toast.success(isNew ? 'Bill saved' : 'Bill updated')
       if (isNew) {
-        navigate(`/bills/${bill._id}`)
+        const customer = customers.find((item) => item._id === customerId)
+        setLastBill({
+          ...bill,
+          customerId: customer
+            ? { _id: customer._id, name: customer.name, mobile: customer.mobile }
+            : { _id: customerId },
+        })
+        blankBill()
+        window.scrollTo(0, 0)
       } else {
         setBillMeta(bill)
         setReason('')
@@ -349,6 +374,29 @@ export default function BillForm() {
         )}
       </header>
 
+      {isNew && lastBill && (
+        <section className="panel last-bill no-print" aria-label="Previous bill">
+          <div className="last-bill-copy">
+            <p className="last-bill-kicker">Previous bill</p>
+            <h2>
+              <Link to={`/bills/${lastBill._id}`}>{lastBill.billNo}</Link>
+            </h2>
+            <p className="muted">
+              {lastBill.customerId?.name || 'Customer'} · {formatDate(lastBill.billDate)} · {formatMoney(lastBill.total)}
+            </p>
+          </div>
+          <div className="row-actions">
+            <Link className="btn ghost" to={`/ledger/${lastBill.customerId?._id || lastBill.customerId}`}>
+              Ledger
+            </Link>
+            <button type="button" className="btn ghost" onClick={() => openWhatsAppShare(lastBill, settings)}>
+              <WhatsappLogo size={16} weight="bold" />
+              WhatsApp
+            </button>
+          </div>
+        </section>
+      )}
+
       <div className="print-only">
         <img className="print-logo" src="/as-logo.png" alt="AS Store" />
         {settings.address && <p>{settings.address}</p>}
@@ -381,11 +429,12 @@ export default function BillForm() {
           <div className="bill-lines">
             <div className="bill-lines-head">
               <span>Product</span>
+              <span />
               <span>Qty</span>
               <span>Rate</span>
               <span>Amount</span>
-              <span />
             </div>
+            {items.length === 0 && <p className="muted bill-lines-empty">No product lines yet.</p>}
             {items.map((item, index) => (
               <div className="bill-line" key={index}>
                 <LineProductField
@@ -396,7 +445,16 @@ export default function BillForm() {
                   onPick={(product) => chooseProduct(index, product)}
                   onCreate={(draft) => createProduct(index, draft)}
                 />
-                <label>
+                <button
+                  type="button"
+                  className="btn line-remove no-print"
+                  onClick={() => removeItem(index)}
+                  disabled={locked}
+                  aria-label="Remove product"
+                >
+                  <Trash size={16} weight="bold" />
+                </button>
+                <label className="line-qty">
                   <span>Qty</span>
                   <input
                     type="number"
@@ -408,7 +466,7 @@ export default function BillForm() {
                     onChange={(e) => updateItem(index, { qty: e.target.value })}
                   />
                 </label>
-                <label>
+                <label className="line-rate">
                   <span>Rate</span>
                   <input
                     type="number"
@@ -424,78 +482,81 @@ export default function BillForm() {
                   <span>Amount</span>
                   <strong>{formatMoney(Number(item.qty || 0) * Number(item.rate || 0))}</strong>
                 </div>
-                <button
-                  type="button"
-                  className="btn ghost icon-only no-print"
-                  onClick={() => removeItem(index)}
-                  aria-label="Remove item"
-                >
-                  <Trash size={16} weight="bold" />
-                </button>
               </div>
             ))}
+            <button type="button" className="btn bill-add-line no-print" onClick={addLine} disabled={locked}>
+              <Plus size={16} weight="bold" />
+              Add product
+            </button>
           </div>
         </section>
 
         <aside className="panel bill-summary">
+          <div className="bill-figures">
+            <div className="figure figure-subtotal">
+              <span>Subtotal</span>
+              <strong>{formatMoney(subtotal)}</strong>
+            </div>
+            <div className="figure figure-discount">
+              <span id="bill-discount-label">Discount</span>
+              <input
+                aria-labelledby="bill-discount-label"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <section className="bill-pay">
+            <h2>Payment</h2>
+            <div className="pay-quick no-print" role="group" aria-label="Quick payment">
+              <button type="button" className={payMode === 'cash' ? 'is-on' : ''} onClick={() => payAll('cash')}>
+                Cash
+              </button>
+              <button type="button" className={payMode === 'upi' ? 'is-on' : ''} onClick={() => payAll('upi')}>
+                UPI
+              </button>
+              <button type="button" className={payMode === 'credit' ? 'is-on' : ''} onClick={() => payAll('credit')}>
+                Udhaar
+              </button>
+            </div>
+            <div className="pay-pair">
+              <label>
+                Cash
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={cash}
+                  onChange={(e) => setCash(e.target.value)}
+                />
+              </label>
+              <label>
+                UPI
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={upi}
+                  onChange={(e) => setUpi(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className={credit > 0 ? 'credit-due' : 'credit-due is-clear'}>
+              <span>{credit > 0 ? 'Udhaar' : 'Paid in full'}</span>
+              <strong>{formatMoney(credit)}</strong>
+            </div>
+          </section>
+
           <div className="till-total">
             <span>Total</span>
             <strong>{formatMoney(total)}</strong>
-          </div>
-          <div className="summary-row">
-            <span>Subtotal</span>
-            <strong>{formatMoney(subtotal)}</strong>
-          </div>
-          <label>
-            Discount
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
-            />
-          </label>
-
-          <div className="pay-quick no-print" role="group" aria-label="Quick payment">
-            <button type="button" className={payMode === 'cash' ? 'is-on' : ''} onClick={() => payAll('cash')}>
-              Cash
-            </button>
-            <button type="button" className={payMode === 'upi' ? 'is-on' : ''} onClick={() => payAll('upi')}>
-              UPI
-            </button>
-            <button type="button" className={payMode === 'credit' ? 'is-on' : ''} onClick={() => payAll('credit')}>
-              Udhaar
-            </button>
-          </div>
-          <div className="pay-pair">
-            <label>
-              Cash
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={cash}
-                onChange={(e) => setCash(e.target.value)}
-              />
-            </label>
-            <label>
-              UPI
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={upi}
-                onChange={(e) => setUpi(e.target.value)}
-              />
-            </label>
-          </div>
-          <div className={credit > 0 ? 'credit-due' : 'credit-due is-clear'}>
-            <span>{credit > 0 ? 'Udhaar' : 'Paid in full'}</span>
-            <strong>{formatMoney(credit)}</strong>
           </div>
 
           <label>
