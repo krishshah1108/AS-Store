@@ -94,7 +94,6 @@ export function SyncProvider({ children }) {
 
     const socket = io(API_URL || undefined, {
       path: '/socket.io',
-      // Prefer polling first on hosts like Render that often drop the websocket upgrade.
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: 8,
