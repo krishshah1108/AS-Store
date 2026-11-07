@@ -17,11 +17,7 @@ function authHeaders() {
   }
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-async function api(path, options = {}, attempt = 0) {
+async function api(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
@@ -39,29 +35,15 @@ async function api(path, options = {}, attempt = 0) {
   }
 
   if (!res.ok) {
-    const raw = String(data?.message || text || '').trim()
-    const waking =
-      res.status === 502 ||
-      res.status === 503 ||
-      res.status === 504 ||
-      (res.status === 404 && /<!DOCTYPE|<html|Cannot GET|Cannot POST/i.test(raw))
-
-    // Render free services take ~1 minute to wake; retry once on wake/proxy failures.
-    if (waking && attempt < 1 && (options.method || 'GET').toUpperCase() === 'GET') {
-      await sleep(2500)
-      return api(path, options, attempt + 1)
-    }
-
     if (res.status === 401 && !path.startsWith('/api/auth/login')) {
       localStorage.removeItem('as_store_token')
       localStorage.removeItem('as_store_user')
       window.dispatchEvent(new CustomEvent('as-store:unauthorized'))
     }
+    const raw = String(data?.message || text || '').trim()
     const friendly =
       /<!DOCTYPE|<html|Cannot GET|Cannot POST/i.test(raw) || raw.length > 180
-        ? res.status === 404
-          ? 'This page could not reach the shop server. Try again in a moment.'
-          : 'The shop server did not respond correctly. Try again in a moment.'
+        ? 'The shop server did not respond correctly. Try again in a moment.'
         : raw || 'Request failed'
     const error = new Error(friendly)
     error.status = res.status

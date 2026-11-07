@@ -31,6 +31,16 @@ export function formatDateTime(value) {
   }).format(date)
 }
 
+export function formatTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
+}
+
 function buildBillText(bill, settings = {}) {
   const customer = bill.customerId || {}
   const lines = [

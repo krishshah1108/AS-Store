@@ -473,7 +473,7 @@ async function receiveBillPayment(billId, { paymentDate, amounts, notes }, userI
     refType: 'Payment',
     refId: payment._id,
     bills: billRefs(bill),
-    note: notes || `Payment ${paymentNo} on ${bill.billNo}`,
+    note: notes || `Payment ${paymentNo} on ${bill.billNo} (cash ${cash} / UPI ${upi})`,
     entryDate: payment.paymentDate,
     userId,
   });

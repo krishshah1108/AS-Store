@@ -1,11 +1,11 @@
 import { ArrowUpRight } from '@phosphor-icons/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import LogoLoader from '../components/LogoLoader'
 import SearchSelect from '../components/SearchSelect'
 import { customersApi, ledgerApi } from '../lib/api'
-import { formatDate, formatMoney } from '../lib/billShare'
+import { formatDate, formatMoney, formatTime } from '../lib/billShare'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
@@ -19,20 +19,57 @@ const TYPE_LABEL = {
   adjustment: 'Adjustment',
 }
 
+const NOTE_SPLITS = [
+  /^(Edit reverse)\s+(.+)$/i,
+  /^(Delete bill payment reverse)\s+(.+)$/i,
+  /^(Delete bill)\s+(.+)$/i,
+  /^(Reversal of payment on)\s+(.+)$/i,
+  /^(Reversal of bill)\s+(.+)$/i,
+  /^(Reclass collection on deleted)\s+(.+)$/i,
+  /^(Return surplus)\s+(.+)$/i,
+  /^(Return on)\s+(.+)$/i,
+  /^(Payment on)\s+(.+)$/i,
+  /^(Payment)\s+(.+)$/i,
+  /^(Bill)\s+(.+)$/i,
+  /^(Refund)\s+(.+)$/i,
+  /^(Advance)\s+(.+)$/i,
+  /^(Adjustment)\s+(.+)$/i,
+]
+
+function particularsParts(entry) {
+  const typeLabel = TYPE_LABEL[entry.type] || 'Entry'
+  const note = String(entry.note || '').trim()
+  if (!note) return { title: typeLabel, detail: '' }
+
+  for (const pattern of NOTE_SPLITS) {
+    const match = note.match(pattern)
+    if (!match) continue
+    let title = match[1]
+    let detail = match[2].trim()
+    if (/^payment on$/i.test(title)) {
+      title = 'Payment'
+      detail = `on ${detail}`
+    } else if (/^return on$/i.test(title)) {
+      title = 'Return'
+      detail = `on ${detail}`
+    } else if (/^reversal of bill$/i.test(title)) {
+      title = 'Reversal'
+      detail = `of bill ${detail}`
+    } else if (/^reversal of payment on$/i.test(title)) {
+      title = 'Reversal'
+      detail = `of payment on ${detail}`
+    }
+    return { title, detail }
+  }
+
+  if (note.toLowerCase().startsWith(typeLabel.toLowerCase())) {
+    return { title: typeLabel, detail: note.slice(typeLabel.length).trim() }
+  }
+  return { title: typeLabel, detail: note }
+}
+
 function moneyCell(amount) {
   return Number(amount) > 0 ? formatMoney(amount) : '—'
-}
-
-function byStatementOrder(a, b) {
-  const time = new Date(a.entryDate) - new Date(b.entryDate)
-  if (time) return time
-  const posted = new Date(a.createdAt) - new Date(b.createdAt)
-  if (posted) return posted
-  return String(a._id).localeCompare(String(b._id))
-}
-
-function roundMoney(value) {
-  return Math.round((Number(value) || 0) * 100) / 100
 }
 
 export default function CustomerLedger() {
@@ -44,6 +81,8 @@ export default function CustomerLedger() {
   const [customersReady, setCustomersReady] = useState(false)
   const [customer, setCustomer] = useState(null)
   const [entries, setEntries] = useState([])
+  const [totals, setTotals] = useState({ debit: 0, credit: 0 })
+  const [outstanding, setOutstanding] = useState(0)
   const [entriesReady, setEntriesReady] = useState(!customerId)
   const [ledgerError, setLedgerError] = useState('')
 
@@ -69,6 +108,8 @@ export default function CustomerLedger() {
     if (!customerId) {
       setCustomer(null)
       setEntries([])
+      setTotals({ debit: 0, credit: 0 })
+      setOutstanding(0)
       setLedgerError('')
       setEntriesReady(true)
       return undefined
@@ -82,12 +123,16 @@ export default function CustomerLedger() {
         if (!active) return
         setCustomer(data.customer || null)
         setEntries(data.customer ? data.entries || [] : [])
+        setTotals(data.totals || { debit: 0, credit: 0 })
+        setOutstanding(Number(data.outstanding) || 0)
         setLedgerError('')
       })
       .catch((err) => {
         if (active) {
           setCustomer(null)
           setEntries([])
+          setTotals({ debit: 0, credit: 0 })
+          setOutstanding(0)
           setLedgerError(err.message || 'Could not load this ledger')
           toast.error(err.message || 'Could not load this ledger')
         }
@@ -99,26 +144,6 @@ export default function CustomerLedger() {
       active = false
     }
   }, [customerId, refreshKey, toast])
-
-  const rows = useMemo(() => {
-    let balance = 0
-    return [...entries].sort(byStatementOrder).map((entry) => {
-      balance = roundMoney(balance + (Number(entry.debit) || 0) - (Number(entry.credit) || 0))
-      return { ...entry, running: balance }
-    })
-  }, [entries])
-  const totals = useMemo(
-    () =>
-      rows.reduce(
-        (sum, entry) => ({
-          debit: sum.debit + (Number(entry.debit) || 0),
-          credit: sum.credit + (Number(entry.credit) || 0),
-        }),
-        { debit: 0, credit: 0 }
-      ),
-    [rows]
-  )
-  const outstanding = Number(customer?.balance) || 0
 
   if (!customersReady) return <LogoLoader page />
 
@@ -191,11 +216,22 @@ export default function CustomerLedger() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((entry) => (
+                {entries.map((entry) => {
+                  const { title, detail } = particularsParts(entry)
+                  const postedAt = formatTime(entry.createdAt)
+                  return (
                   <tr key={entry._id}>
-                    <td data-label="Date">{formatDate(entry.entryDate)}</td>
+                    <td data-label="Date">
+                      <span className="ledger-when">
+                        <span className="ledger-when-date">{formatDate(entry.entryDate)}</span>
+                        {postedAt ? <span className="ledger-when-time">{postedAt}</span> : null}
+                      </span>
+                    </td>
                     <td data-label="Particulars">
-                      {entry.note || TYPE_LABEL[entry.type] || 'Entry'}
+                      <span className="ledger-particulars">
+                        <span className="ledger-particulars-title">{title}</span>
+                        {detail ? <span className="ledger-particulars-detail">{detail}</span> : null}
+                      </span>
                     </td>
                     <td data-label="Reference">
                       {entry.bills?.length ? (
@@ -221,8 +257,9 @@ export default function CustomerLedger() {
                       {formatMoney(entry.running)}
                     </td>
                   </tr>
-                ))}
-                {!rows.length && (
+                  )
+                })}
+                {!entries.length && (
                   <tr>
                     <td colSpan={6}>No ledger entries for this customer.</td>
                   </tr>

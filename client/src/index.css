@@ -372,23 +372,22 @@ button, input, textarea, select { font: inherit; color: inherit; }
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 2px;
+  gap: 4px 6px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   margin: 0;
-  padding: 4px;
+  padding: 0;
   list-style: none;
   box-sizing: border-box;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: var(--shadow-sm);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 .crumbs li {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   max-width: 100%;
 }
@@ -399,12 +398,13 @@ button, input, textarea, select { font: inherit; color: inherit; }
   gap: 6px;
   min-width: 0;
   max-width: 100%;
-  min-height: 30px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 0.84rem;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.95rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
+  background: transparent;
 }
 .crumb-label {
   min-width: 0;
@@ -414,43 +414,35 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 .crumbs a { color: var(--color-text-secondary); }
 .crumbs a:hover {
-  background: var(--color-primary-soft);
   color: var(--color-primary);
+  background: transparent;
 }
 .crumb-current {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  max-width: min(100%, 16rem);
+  color: var(--color-text);
+  font-weight: 700;
+  max-width: min(100%, 18rem);
 }
 .crumb-sep {
   color: #b7aea0;
   flex: none;
-  margin-inline: 1px;
+  margin-inline: 0;
 }
 .crumbs a svg,
 .crumb-current svg { flex: none; }
 
 @media (max-width: 1023px) {
-  .crumbs ol {
-    gap: 2px;
-    padding: 3px;
-    border-radius: 12px;
-  }
+  .crumbs ol { gap: 2px 4px; }
   .crumbs a,
   .crumb-current {
-    min-height: 28px;
-    padding: 0 8px;
+    min-height: 26px;
     gap: 5px;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
-  .crumb-current { max-width: min(100%, 11rem); }
+  .crumb-current { max-width: min(100%, 12rem); }
 }
 
 @media (max-width: 640px) {
-  .crumbs ol {
-    row-gap: 4px;
-    padding: 3px 4px;
-  }
+  .crumbs ol { row-gap: 4px; }
   .crumb-home .crumb-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .crumb-home a,
   .crumb-home .crumb-current {
@@ -461,12 +453,10 @@ button, input, textarea, select { font: inherit; color: inherit; }
   }
   .crumbs a,
   .crumb-current {
-    min-height: 28px;
-    padding: 0 8px;
-    font-size: 0.78rem;
+    min-height: 26px;
+    font-size: 0.88rem;
   }
-  .crumb-current { max-width: min(100%, 9.5rem); }
-  .crumb-sep { margin-inline: 0; }
+  .crumb-current { max-width: min(100%, 10rem); }
 }
 
 .back-link {
@@ -1610,6 +1600,35 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
+.ledger-when {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ledger-when-date { font-weight: 600; }
+.ledger-when-time {
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+.ledger-particulars {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ledger-particulars-title {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  color: var(--color-text);
+}
+.ledger-particulars-detail {
+  color: var(--color-text-muted);
+  font-size: 0.9em;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
 .ledger-refs { display: flex; flex-wrap: wrap; gap: 6px; }
 .ledger-ref {
   display: inline-flex;
@@ -1853,15 +1872,28 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
     padding-top: 0;
   }
   .invoice-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: end;
+    justify-items: end;
     align-items: center;
     gap: 8px;
     padding-top: 10px;
     border-top: 1px solid var(--color-divider);
   }
-  .invoice-actions-row { display: contents; }
+  .invoice-actions-icons {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .invoice-actions-share {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .invoice-actions-primary {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-end;
+  }
   .invoice-actions-icons .invoice-icon,
   .invoice-actions-share .invoice-icon {
     flex: none;

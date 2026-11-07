@@ -28,12 +28,7 @@ async function start() {
   app.use(express.json({ limit: '2mb' }));
 
   app.get('/api/health', (_req, res) => {
-    res.json({
-      ok: true,
-      service: 'as-store-api',
-      ledger: true,
-      time: new Date().toISOString(),
-    });
+    res.json({ ok: true });
   });
 
   app.use('/api/auth', authRoutes);
