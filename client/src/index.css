@@ -1111,7 +1111,6 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   50% { opacity: 1; transform: scale(1); }
 }
 
-.print-logo { width: min(100%, 340px); height: auto; margin-bottom: 8px; }
 
 .page.bill-page { width: min(100%, 1120px); }
 
@@ -1302,6 +1301,111 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 .last-bill .muted { margin: 0; }
 .last-bill .row-actions { width: auto; }
 
+.bill-context {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid #cfe3de;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #f4faf8 0%, #fff 100%);
+}
+.bill-context-main { display: grid; gap: 2px; }
+.bill-context-id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.bill-context-id strong { font-size: 1.05rem; }
+.bill-context-main p { margin: 0; }
+.bill-context-action {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.invoice-sheet {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 880px;
+  padding: var(--space-5);
+}
+.invoice-sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.invoice-sheet-logo {
+  width: 72px;
+  height: auto;
+  margin-bottom: var(--space-2);
+}
+.invoice-sheet-head h2 { margin: 0 0 4px; font-size: 1.35rem; }
+.invoice-sheet-head p { margin: 0; color: var(--color-text-secondary); font-size: 0.9rem; }
+.invoice-sheet-meta {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  text-align: right;
+}
+.invoice-sheet-kicker {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.invoice-sheet-meta strong { font-size: 1.2rem; }
+.invoice-sheet-party h3,
+.invoice-sheet-notes h3 {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.invoice-sheet-party p { margin: 0; }
+.invoice-sheet-table { width: 100%; }
+.invoice-sheet-totals {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  margin-left: auto;
+  width: min(100%, 280px);
+}
+.invoice-sheet-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.invoice-sheet-totals dt { margin: 0; color: var(--color-text-secondary); }
+.invoice-sheet-totals dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+.invoice-sheet-totals .is-total {
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  font-size: 1.05rem;
+}
+.invoice-sheet-totals .is-paid { color: var(--color-success); }
+.invoice-sheet-totals .is-due { color: var(--color-accent); }
+.invoice-sheet-notes p { margin: 0; white-space: pre-wrap; }
+.invoice-sheet-footer {
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+.bill-view-actions { flex-wrap: wrap; }
+
 .pay-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .pay-quick button {
   min-height: 40px;
@@ -1404,7 +1508,6 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 .payment-list p { margin: 0; }
 .bill-receive { display: grid; gap: var(--space-3); padding-top: var(--space-3); }
 .bill-receive h3 { margin: 0; }
-.print-only { display: none; }
 
 .invoice-card {
   display: grid;
@@ -1808,7 +1911,12 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 
 @media print {
   .sidebar, .topbar, .bottom-nav, .no-print { display: none !important; }
-  .print-only { display: block; }
   .app-shell, .content-shell, .main, .page { display: block !important; background: #fff !important; padding: 0 !important; }
   .panel, .stat { box-shadow: none; }
+  .invoice-sheet {
+    max-width: none;
+    border: 0;
+    padding: 0;
+  }
+  .bill-view-actions { display: none !important; }
 }

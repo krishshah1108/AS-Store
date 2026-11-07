@@ -3,6 +3,9 @@ import Layout from './components/Layout'
 import LogoLoader from './components/LogoLoader'
 import { useAuth } from './context/AuthContext'
 import BillForm from './pages/BillForm'
+import BillPayment from './pages/BillPayment'
+import BillReturn from './pages/BillReturn'
+import BillView from './pages/BillView'
 import Bills from './pages/Bills'
 import CustomerLedger from './pages/CustomerLedger'
 import CustomerForm from './pages/CustomerForm'
@@ -34,7 +37,10 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="bills" element={<Bills />} />
         <Route path="bills/new" element={<BillForm />} />
-        <Route path="bills/:id" element={<BillForm />} />
+        <Route path="bills/:id" element={<BillView />} />
+        <Route path="bills/:id/edit" element={<BillForm />} />
+        <Route path="bills/:id/payment" element={<BillPayment />} />
+        <Route path="bills/:id/return" element={<BillReturn />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/new" element={<CustomerForm />} />
         <Route path="ledger" element={<CustomerLedger />} />

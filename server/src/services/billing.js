@@ -15,9 +15,11 @@ function normalizeItems(items = []) {
   return items.map((item) => {
     const rateProblem = moneyError(item.rate, 'Rate');
     if (rateProblem) throw new Error(rateProblem);
-    const qty = round2(item.qty);
+    const qty = Number(item.qty);
     const rate = round2(item.rate);
-    if (!(qty > 0)) throw new Error('Each item needs a qty greater than 0');
+    if (!Number.isInteger(qty) || qty <= 0) {
+      throw new Error('Each item needs a whole-number qty greater than 0');
+    }
     return {
       productId: item.productId || undefined,
       name: String(item.name || '').trim(),
@@ -284,12 +286,14 @@ async function returnBillItems(billId, { items: returnItems, notes = '' }, userI
     if (idx < 0 || !currentItems[idx]) {
       throw new Error(`Return item not found on bill: ${ret.name || ret.productId}`);
     }
-    const qty = round2(ret.qty);
-    if (qty <= 0) throw new Error('Return qty must be > 0');
-    if (qty > currentItems[idx].qty + 0.001) {
+    const qty = Number(ret.qty);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      throw new Error('Return qty must be a whole number greater than 0');
+    }
+    if (qty > currentItems[idx].qty) {
       throw new Error(`Cannot return more than billed qty for ${currentItems[idx].name}`);
     }
-    currentItems[idx].qty = round2(currentItems[idx].qty - qty);
+    currentItems[idx].qty = Number(currentItems[idx].qty) - qty;
     currentItems[idx].amount = round2(currentItems[idx].qty * currentItems[idx].rate);
   }
 
