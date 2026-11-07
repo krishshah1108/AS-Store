@@ -1275,7 +1275,17 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   background: var(--color-bg);
 }
 .bill-line-name { grid-column: 1 / 4; grid-row: 1; width: 100%; }
-.line-remove { grid-column: 4; grid-row: 1; }
+.line-remove {
+  grid-column: 4;
+  grid-row: 1;
+  width: var(--control-h);
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0;
+  color: #9f2c2c;
+  background: #fdeeee;
+  border-color: #e7b4b4;
+}
 .line-qty { grid-column: 1; grid-row: 2; }
 .line-rate { grid-column: 2; grid-row: 2; }
 .line-amount { grid-column: 3 / 5; grid-row: 2; }
@@ -1328,15 +1338,6 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   font-weight: 600;
 }
 .line-product-empty { padding: 12px; color: var(--color-text-muted); }
-.line-remove {
-  width: var(--control-h);
-  height: var(--control-h);
-  min-height: var(--control-h);
-  padding: 0;
-  color: #9f2c2c;
-  background: #fdeeee;
-  border-color: #e7b4b4;
-}
 .line-remove:hover { color: #fff; background: #9f2c2c; border-color: #9f2c2c; }
 .bill-line label { gap: 4px; margin: 0; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
 .bill-line label input { color: var(--color-text); font-size: 1rem; font-weight: 500; }
