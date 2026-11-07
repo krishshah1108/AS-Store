@@ -270,11 +270,11 @@ export default function Customers() {
                 </div>
               </dl>
               <div className="row-actions">
-                <Link className="btn ghost" to={`/ledger/${row._id}`}>
+                <Link className="btn ghost is-ledger" to={`/ledger/${row._id}`}>
                   <Notebook size={16} weight="bold" />
                   Ledger
                 </Link>
-                <button type="button" className="btn ghost" onClick={() => startEdit(row)}>
+                <button type="button" className="btn ghost is-edit" onClick={() => startEdit(row)}>
                   <PencilSimple size={16} weight="bold" />
                   Edit
                 </button>

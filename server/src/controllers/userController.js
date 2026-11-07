@@ -87,6 +87,4 @@ module.exports = {
   listUsers,
   createUser,
   toggleUserActive,
-  mobileDigits,
-  mobileError,
 };

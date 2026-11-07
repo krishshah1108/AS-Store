@@ -51,5 +51,4 @@ async function updateSettings(req, res) {
 module.exports = {
   getSettings,
   updateSettings,
-  getOrCreateSettings,
 };

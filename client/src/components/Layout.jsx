@@ -41,29 +41,32 @@ function todayLabel(compact) {
 }
 
 const links = [
-  { to: '/', label: 'Home', end: true, icon: House },
+  { to: '/', label: 'Home', end: true, icon: House, navTone: 'nav-home' },
   {
     to: '/bills',
     label: 'Bills',
     icon: Receipt,
+    navTone: 'nav-bills',
     match: (path) => path === '/bills' || (path.startsWith('/bills/') && path !== '/bills/new'),
-    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus, accent: true }],
+    children: [{ to: '/bills/new', label: 'Add bill', icon: Plus, accent: true, navTone: 'nav-add' }],
   },
-  { to: '/ledger', label: 'Ledger', icon: Notebook },
-  { to: '/reports', label: 'Reports', icon: ChartLine },
+  { to: '/ledger', label: 'Ledger', icon: Notebook, navTone: 'nav-ledger' },
+  { to: '/reports', label: 'Reports', icon: ChartLine, navTone: 'nav-reports' },
   {
     to: '/customers',
     label: 'Customers',
     end: true,
     icon: UsersThree,
-    children: [{ to: '/customers/new', label: 'Add customer', icon: Plus }],
+    navTone: 'nav-customers',
+    children: [{ to: '/customers/new', label: 'Add customer', icon: Plus, navTone: 'nav-add' }],
   },
   {
     to: '/products',
     label: 'Products',
     end: true,
     icon: Package,
-    children: [{ to: '/products/new', label: 'Add product', icon: Plus }],
+    navTone: 'nav-products',
+    children: [{ to: '/products/new', label: 'Add product', icon: Plus, navTone: 'nav-add' }],
   },
   {
     to: '/users',
@@ -71,9 +74,10 @@ const links = [
     end: true,
     ownerOnly: true,
     icon: UsersIcon,
-    children: [{ to: '/users/new', label: 'Add user', icon: Plus }],
+    navTone: 'nav-users',
+    children: [{ to: '/users/new', label: 'Add user', icon: Plus, navTone: 'nav-add' }],
   },
-  { to: '/settings', label: 'Settings', icon: GearSix },
+  { to: '/settings', label: 'Settings', icon: GearSix, navTone: 'nav-settings' },
 ]
 
 function barItem(items, to) {
@@ -111,10 +115,14 @@ function NavItem({ item, pathname, compact }) {
     <NavLink
       to={item.to}
       end={compact && item.to === '/products' ? false : item.end}
-      className={({ isActive }) => [active(isActive), compact && item.accent ? 'bottom-add' : ''].filter(Boolean).join(' ')}
+      className={({ isActive }) =>
+        [active(isActive), compact && item.accent ? 'bottom-add' : '', item.navTone || '']
+          .filter(Boolean)
+          .join(' ')
+      }
     >
-      <Icon size={compact ? 22 : 20} weight={item.accent ? 'bold' : 'regular'} />
-      {compact ? <span>{item.label}</span> : item.label}
+      <Icon size={compact ? 22 : 20} weight="bold" aria-hidden="true" />
+      <span>{item.label}</span>
     </NavLink>
   )
 }
@@ -205,7 +213,7 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-footer">
-          <button type="button" className="btn ghost logout-btn" onClick={() => setConfirmLogout(true)}>
+          <button type="button" className="btn ghost is-logout logout-btn" onClick={() => setConfirmLogout(true)}>
             <SignOut size={16} weight="bold" />
             Logout
           </button>
@@ -223,15 +231,17 @@ export default function Layout() {
 
       <div className="content-shell">
         <header className="topbar">
-          <button
-            type="button"
-            className="icon-btn hamburger"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
-          >
-            <List size={24} weight="bold" />
-          </button>
-          <Logo />
+          <div className="topbar-brand">
+            <button
+              type="button"
+              className="icon-btn hamburger"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <List size={20} weight="bold" />
+            </button>
+            <Logo />
+          </div>
           <div className="topbar-greeting">
             <p className="topbar-hello">
               <span className="hello-full">{greetingFor(user?.name)}</span>
@@ -285,7 +295,7 @@ export default function Layout() {
                 <button
                   type="button"
                   role="menuitem"
-                  className="btn ghost"
+                  className="btn ghost is-logout"
                   onClick={() => {
                     setProfileOpen(false)
                     setConfirmLogout(true)
@@ -302,7 +312,7 @@ export default function Layout() {
                 {pendingCount}
               </span>
             )}
-            <button type="button" className="btn ghost profile-logout" onClick={() => setConfirmLogout(true)}>
+            <button type="button" className="btn ghost is-logout profile-logout" onClick={() => setConfirmLogout(true)}>
               <SignOut size={16} weight="bold" />
               Logout
             </button>

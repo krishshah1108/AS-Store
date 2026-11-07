@@ -219,11 +219,11 @@ export default function Bills() {
                 </dl>
                 <div className="invoice-actions">
                   <div className="invoice-actions-row invoice-actions-icons">
-                    <Link className="invoice-icon" to={`/bills/${row._id}`} aria-label="Open bill">
+                    <Link className="invoice-icon is-view" to={`/bills/${row._id}`} aria-label="Open bill">
                       <Eye size={18} />
                     </Link>
                     {!locked && (
-                      <Link className="invoice-icon" to={`/bills/${row._id}/edit`} aria-label="Edit bill">
+                      <Link className="invoice-icon is-edit" to={`/bills/${row._id}/edit`} aria-label="Edit bill">
                         <PencilSimple size={18} weight="bold" />
                       </Link>
                     )}
@@ -255,7 +255,7 @@ export default function Bills() {
                   <div className="invoice-actions-row invoice-actions-share">
                     <button
                       type="button"
-                      className="invoice-icon"
+                      className="invoice-icon is-whatsapp"
                       aria-label="WhatsApp"
                       onClick={() => shareOrDownload(row, (bill) => openWhatsAppShare(bill, settings))}
                     >
@@ -263,7 +263,7 @@ export default function Bills() {
                     </button>
                     <button
                       type="button"
-                      className="invoice-icon"
+                      className="invoice-icon is-download"
                       aria-label="Download"
                       onClick={() => shareOrDownload(row, (bill) => downloadBill(bill, settings))}
                     >
@@ -271,7 +271,7 @@ export default function Bills() {
                     </button>
                     <button
                       type="button"
-                      className="invoice-icon"
+                      className="invoice-icon is-activity"
                       aria-label={`Activity for ${row.billNo}`}
                       onClick={() => openActivity(row)}
                     >

@@ -375,11 +375,11 @@ export default function BillForm() {
             </p>
           </Link>
           <div className="row-actions">
-            <Link className="btn ghost" to={`/bills/${lastBill._id}`} aria-label="Open bill">
+            <Link className="btn ghost is-view" to={`/bills/${lastBill._id}`} aria-label="Open bill">
               <Eye size={16} weight="bold" />
               Open
             </Link>
-            <button type="button" className="btn ghost" onClick={() => openWhatsAppShare(lastBill, settings)}>
+            <button type="button" className="btn ghost is-whatsapp" onClick={() => openWhatsAppShare(lastBill, settings)}>
               <WhatsappLogo size={16} weight="bold" />
               WhatsApp
             </button>

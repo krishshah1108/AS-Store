@@ -84,7 +84,7 @@ export default function ProductForm() {
           <h1>Add product</h1>
         </div>
         <div className="row-actions">
-          <button type="button" className="btn ghost" onClick={() => setImportOpen((open) => !open)}>
+          <button type="button" className="btn ghost is-import" onClick={() => setImportOpen((open) => !open)}>
             <FileXls size={16} weight="bold" />
             Import products
           </button>

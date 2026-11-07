@@ -228,7 +228,7 @@ export default function Products() {
                 </div>
               </dl>
               <div className="row-actions">
-                <button type="button" className="btn ghost" onClick={() => startEdit(row)}>
+                <button type="button" className="btn ghost is-edit" onClick={() => startEdit(row)}>
                   <PencilSimple size={16} weight="bold" />
                   Edit
                 </button>

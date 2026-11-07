@@ -91,7 +91,7 @@ export default function Home() {
             <Receipt size={16} weight="bold" />
             Add bill
           </Link>
-          <Link className="btn ghost" to="/ledger">
+          <Link className="btn ghost is-ledger" to="/ledger">
             <Notebook size={16} weight="bold" />
             Ledger
           </Link>
@@ -100,50 +100,50 @@ export default function Home() {
 
       <div className="stat-grid">
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-primary">
             <Receipt size={16} weight="regular" /> Sales
           </span>
           <strong>{formatMoney(dash?.salesTotal)}</strong>
           <small className="muted">{dash?.billCount || 0} bills</small>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-success">
             <CurrencyInr size={16} weight="regular" /> Cash
           </span>
           <strong>{formatMoney(dash?.netCash)}</strong>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-info">
             <CurrencyInr size={16} weight="regular" /> UPI
           </span>
           <strong>{formatMoney(dash?.netUpi)}</strong>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-accent">
             <Notebook size={16} weight="regular" /> Credit given
           </span>
           <strong>{formatMoney(dash?.creditGiven)}</strong>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-success">
             <CurrencyInr size={16} weight="regular" /> Recovered
           </span>
           <strong>{formatMoney(dash?.creditRecovered)}</strong>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-danger">
             <WarningCircle size={16} weight="regular" /> Outstanding
           </span>
           <strong className="due-amt">{formatMoney(dash?.outstandingTotal)}</strong>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-primary">
             <CurrencyInr size={16} weight="regular" /> Advances
           </span>
           <strong>{formatMoney(dash?.advanceTotal)}</strong>
         </div>
         <div className="stat">
-          <span className="label-with-icon">
+          <span className="label-with-icon tone-warning">
             <UsersThree size={16} weight="regular" /> Customers due
           </span>
           <strong>{dash?.pendingCustomers?.length || 0}</strong>
@@ -249,7 +249,8 @@ export default function Home() {
                   {formatMoney(customer.balance)}
                 </td>
                 <td className="row-actions">
-                  <Link className="btn ghost" to={`/ledger/${customer._id}`}>
+                  <Link className="btn ghost is-ledger" to={`/ledger/${customer._id}`}>
+                    <Notebook size={16} weight="bold" />
                     Ledger
                   </Link>
                 </td>

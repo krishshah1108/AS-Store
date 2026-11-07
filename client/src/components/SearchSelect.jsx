@@ -11,7 +11,6 @@ export default function SearchSelect({
   getKey,
   getLabel,
   getHint,
-  keepFocus = false,
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -54,9 +53,6 @@ export default function SearchSelect({
     onSelect(option)
     setQuery('')
     setOpen(false)
-    if (keepFocus) {
-      requestAnimationFrame(() => box.current?.querySelector('input')?.focus())
-    }
   }
 
   const optionCount = filtered.length + (canAdd ? 1 : 0)

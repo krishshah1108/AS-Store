@@ -1,3 +1,5 @@
+const { round2 } = require('./billing')
+
 const ACTION_SUMMARY = {
   create: 'Created the bill',
   update: 'Edited the bill',
@@ -21,10 +23,6 @@ const FIELDS = [
   { field: 'status', label: 'Status', kind: 'text' },
   { field: 'notes', label: 'Notes', kind: 'text' },
 ]
-
-function round2(value) {
-  return Math.round((Number(value) + Number.EPSILON) * 100) / 100
-}
 
 function readPath(source, path) {
   return path.split('.').reduce((current, key) => (current == null ? undefined : current[key]), source)

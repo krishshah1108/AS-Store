@@ -84,6 +84,4 @@ module.exports = {
   listCustomers,
   createCustomer,
   updateCustomer,
-  mobileDigits,
-  mobileError,
 };

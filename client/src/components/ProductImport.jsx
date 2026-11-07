@@ -196,7 +196,7 @@ export default function ProductImport({ existingNames, online, onDone, onClose }
     <section className="panel form editor">
       <h2>Import products</h2>
       <label className="file-drop">
-        <FileXls size={36} weight="duotone" />
+        <FileXls className="tone-success" size={36} weight="duotone" />
         <strong>{fileName || 'Choose an Excel or CSV file'}</strong>
         <span>{fileName ? 'Choose a different file' : 'XLSX, XLS, or CSV. The first row must be the column headers.'}</span>
         <input

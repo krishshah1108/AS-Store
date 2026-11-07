@@ -1,5 +1,38 @@
-import { CaretRight, House } from '@phosphor-icons/react'
+import {
+  ArrowUUpLeft,
+  CaretRight,
+  ChartLine,
+  CurrencyInr,
+  GearSix,
+  House,
+  Notebook,
+  Package,
+  PencilSimple,
+  Plus,
+  Receipt,
+  Users as UsersIcon,
+  UsersThree,
+} from '@phosphor-icons/react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+
+const crumbIcons = {
+  Home: House,
+  Bills: Receipt,
+  'Add bill': Plus,
+  Edit: PencilSimple,
+  Payment: CurrencyInr,
+  Return: ArrowUUpLeft,
+  Products: Package,
+  'Add product': Plus,
+  Customers: UsersThree,
+  'Add customer': Plus,
+  Ledger: Notebook,
+  Customer: UsersThree,
+  Reports: ChartLine,
+  Users: UsersIcon,
+  'Add user': Plus,
+  Settings: GearSix,
+}
 
 function billCrumbs(pathname, params, billNo) {
   const label = billNo || 'Bill'
@@ -48,6 +81,12 @@ const trails = [
   },
 ]
 
+function CrumbIcon({ label }) {
+  const Icon = crumbIcons[label]
+  if (!Icon) return null
+  return <Icon size={14} weight="fill" aria-hidden="true" />
+}
+
 export default function Breadcrumbs({ className = '', billNo }) {
   const { pathname } = useLocation()
   const params = useParams()
@@ -60,16 +99,18 @@ export default function Breadcrumbs({ className = '', billNo }) {
       <ol>
         {crumbs.map((crumb, index) => {
           const current = index === crumbs.length - 1
+          const home = index === 0 && crumb.label === 'Home'
           return (
-            <li key={`${crumb.label}-${index}`}>
+            <li key={`${crumb.label}-${index}`} className={home ? 'crumb-home' : undefined}>
               {current || !crumb.to ? (
-                <span className="crumb-current" aria-current={current ? 'page' : undefined}>
-                  {crumb.label}
+                <span className="crumb-current" aria-current={current ? 'page' : undefined} title={crumb.label}>
+                  <CrumbIcon label={crumb.label} />
+                  <span className="crumb-label">{crumb.label}</span>
                 </span>
               ) : (
-                <Link to={crumb.to}>
-                  {index === 0 && <House size={14} weight="fill" aria-hidden="true" />}
-                  {crumb.label}
+                <Link to={crumb.to} title={crumb.label}>
+                  <CrumbIcon label={crumb.label} />
+                  <span className="crumb-label">{crumb.label}</span>
                 </Link>
               )}
               {!current && <CaretRight className="crumb-sep" size={12} weight="bold" aria-hidden="true" />}
