@@ -5,6 +5,8 @@ let io = null;
 function initSocket(server, corsOrigin) {
   io = new Server(server, {
     cors: { origin: corsOrigin },
+    transports: ['polling', 'websocket'],
+    allowUpgrades: true,
   });
 }
 

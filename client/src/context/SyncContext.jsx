@@ -94,7 +94,9 @@ export function SyncProvider({ children }) {
 
     const socket = io(API_URL || undefined, {
       path: '/socket.io',
-      transports: ['polling', 'websocket'],
+      // Render free tier often drops the websocket upgrade; stay on HTTP long-polling.
+      transports: ['polling'],
+      upgrade: false,
       reconnection: true,
       reconnectionAttempts: 8,
       timeout: 12000,
