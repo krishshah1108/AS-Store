@@ -1,16 +1,9 @@
-import {
-  ArrowLeft,
-  ArrowUUpLeft,
-  CurrencyInr,
-  PencilSimple,
-  Printer,
-  WhatsappLogo,
-} from '@phosphor-icons/react'
+import { ArrowLeft } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import LogoLoader from '../components/LogoLoader'
-import useBill, { billIsLocked, billStatusLabel, billStatusTone } from '../hooks/useBill'
-import { formatDate, formatMoney, openWhatsAppShare } from '../lib/billShare'
+import useBill, { billStatusLabel, billStatusTone } from '../hooks/useBill'
+import { formatDate, formatMoney } from '../lib/billShare'
 import { useAuth } from '../context/AuthContext'
 
 export default function BillView() {
@@ -31,11 +24,7 @@ export default function BillView() {
     )
   }
 
-  const locked = billIsLocked(bill)
   const due = Number(bill.dueAmount) || 0
-  const canPay = due > 0 && !locked
-  const canReturn = !locked
-  const canEdit = !locked
   const creator =
     bill.createdBy?.name ||
     (String(bill.createdBy?._id || bill.createdBy) === String(user?.id) ? user.name : 'Unknown')
@@ -51,37 +40,6 @@ export default function BillView() {
           </Link>
           <h1>{bill.billNo}</h1>
           <p className="muted">Created by {creator}</p>
-        </div>
-        <div className="row-actions bill-view-actions">
-          {canEdit && (
-            <Link className="btn ghost" to={`/bills/${bill._id}/edit`}>
-              <PencilSimple size={16} weight="bold" />
-              Edit
-            </Link>
-          )}
-          {canPay && (
-            <Link className="btn primary" to={`/bills/${bill._id}/payment`}>
-              <CurrencyInr size={16} weight="bold" />
-              Payment
-            </Link>
-          )}
-          {canReturn && (
-            <Link className="btn ghost" to={`/bills/${bill._id}/return`}>
-              <ArrowUUpLeft size={16} weight="bold" />
-              Return
-            </Link>
-          )}
-          <Link className="btn ghost" to={`/ledger/${bill.customerId?._id || bill.customerId}`}>
-            Ledger
-          </Link>
-          <button type="button" className="btn ghost" onClick={() => window.print()}>
-            <Printer size={16} weight="bold" />
-            Print
-          </button>
-          <button type="button" className="btn ghost" onClick={() => openWhatsAppShare(bill, settings)}>
-            <WhatsappLogo size={16} weight="bold" />
-            WhatsApp
-          </button>
         </div>
       </header>
 

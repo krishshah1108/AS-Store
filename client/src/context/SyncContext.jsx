@@ -92,7 +92,14 @@ export function SyncProvider({ children }) {
   useEffect(() => {
     if (!user) return undefined
 
-    const socket = io(API_URL || undefined, { path: '/socket.io' })
+    const socket = io(API_URL || undefined, {
+      path: '/socket.io',
+      // Prefer polling first on hosts like Render that often drop the websocket upgrade.
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 8,
+      timeout: 12000,
+    })
 
     const onChange = () => {
       bump()

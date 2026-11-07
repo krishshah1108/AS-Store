@@ -41,6 +41,10 @@ async function start() {
   app.use('/api/ledger', ledgerRoutes);
   app.use('/api/reports', reportRoutes);
 
+  app.use((req, res) => {
+    res.status(404).json({ message: `No route for ${req.method} ${req.path}` });
+  });
+
   app.use((err, _req, res, _next) => {
     console.error(err);
     res.status(500).json({ message: err.message || 'Server error' });

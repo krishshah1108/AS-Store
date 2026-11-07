@@ -45,6 +45,7 @@ export default function CustomerLedger() {
   const [customer, setCustomer] = useState(null)
   const [entries, setEntries] = useState([])
   const [entriesReady, setEntriesReady] = useState(!customerId)
+  const [ledgerError, setLedgerError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -68,23 +69,27 @@ export default function CustomerLedger() {
     if (!customerId) {
       setCustomer(null)
       setEntries([])
+      setLedgerError('')
       setEntriesReady(true)
       return undefined
     }
     let active = true
     setEntriesReady(false)
+    setLedgerError('')
     ledgerApi
       .list({ customerId })
       .then((data) => {
         if (!active) return
         setCustomer(data.customer || null)
         setEntries(data.customer ? data.entries || [] : [])
+        setLedgerError('')
       })
       .catch((err) => {
         if (active) {
           setCustomer(null)
           setEntries([])
-          toast.error(err.message)
+          setLedgerError(err.message || 'Could not load this ledger')
+          toast.error(err.message || 'Could not load this ledger')
         }
       })
       .finally(() => {
@@ -143,7 +148,9 @@ export default function CustomerLedger() {
       {customerId && !entriesReady && <LogoLoader panel />}
 
       {customerId && entriesReady && !customer && (
-        <div className="panel empty-state">This customer could not be found.</div>
+        <div className="panel empty-state">
+          {ledgerError || 'This customer could not be found.'}
+        </div>
       )}
 
       {customer && entriesReady && (

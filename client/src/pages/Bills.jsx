@@ -218,58 +218,66 @@ export default function Bills() {
                   </div>
                 </dl>
                 <div className="invoice-actions">
-                  <Link className="invoice-icon" to={`/bills/${row._id}`} aria-label="Open bill">
-                    <Eye size={18} />
-                  </Link>
-                  {!locked && (
-                    <Link className="invoice-icon" to={`/bills/${row._id}/edit`} aria-label="Edit bill">
-                      <PencilSimple size={18} weight="bold" />
+                  <div className="invoice-actions-row invoice-actions-icons">
+                    <Link className="invoice-icon" to={`/bills/${row._id}`} aria-label="Open bill">
+                      <Eye size={18} />
                     </Link>
+                    {!locked && (
+                      <Link className="invoice-icon" to={`/bills/${row._id}/edit`} aria-label="Edit bill">
+                        <PencilSimple size={18} weight="bold" />
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      className="invoice-icon is-danger"
+                      aria-label="Delete bill"
+                      onClick={() => setPendingDelete(row)}
+                    >
+                      <Trash size={18} weight="bold" />
+                    </button>
+                  </div>
+                  {(canReturn || canPay) && (
+                    <div className="invoice-actions-row invoice-actions-primary">
+                      {canReturn && (
+                        <Link className="btn primary invoice-return" to={`/bills/${row._id}/return`}>
+                          <ArrowUUpLeft size={16} weight="bold" />
+                          <span>Return</span>
+                        </Link>
+                      )}
+                      {canPay && (
+                        <Link className="btn primary invoice-pay" to={`/bills/${row._id}/payment`}>
+                          <CurrencyInr size={16} weight="bold" />
+                          Payment
+                        </Link>
+                      )}
+                    </div>
                   )}
-                  {canPay && (
-                    <Link className="btn primary invoice-pay" to={`/bills/${row._id}/payment`}>
-                      <CurrencyInr size={16} weight="bold" />
-                      Payment
-                    </Link>
-                  )}
-                  {canReturn && (
-                    <Link className="btn ghost invoice-return" to={`/bills/${row._id}/return`}>
-                      <ArrowUUpLeft size={16} weight="bold" />
-                      <span>Return</span>
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    className="invoice-icon"
-                    aria-label="WhatsApp"
-                    onClick={() => shareOrDownload(row, (bill) => openWhatsAppShare(bill, settings))}
-                  >
-                    <WhatsappLogo size={18} weight="bold" />
-                  </button>
-                  <button
-                    type="button"
-                    className="invoice-icon"
-                    aria-label="Download"
-                    onClick={() => shareOrDownload(row, (bill) => downloadBill(bill, settings))}
-                  >
-                    <DownloadSimple size={18} weight="bold" />
-                  </button>
-                  <button
-                    type="button"
-                    className="invoice-icon"
-                    aria-label={`Activity for ${row.billNo}`}
-                    onClick={() => openActivity(row)}
-                  >
-                    <Info size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    className="invoice-icon is-danger"
-                    aria-label="Delete bill"
-                    onClick={() => setPendingDelete(row)}
-                  >
-                    <Trash size={18} weight="bold" />
-                  </button>
+                  <div className="invoice-actions-row invoice-actions-share">
+                    <button
+                      type="button"
+                      className="invoice-icon"
+                      aria-label="WhatsApp"
+                      onClick={() => shareOrDownload(row, (bill) => openWhatsAppShare(bill, settings))}
+                    >
+                      <WhatsappLogo size={18} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      className="invoice-icon"
+                      aria-label="Download"
+                      onClick={() => shareOrDownload(row, (bill) => downloadBill(bill, settings))}
+                    >
+                      <DownloadSimple size={18} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      className="invoice-icon"
+                      aria-label={`Activity for ${row.billNo}`}
+                      onClick={() => openActivity(row)}
+                    >
+                      <Info size={18} />
+                    </button>
+                  </div>
                 </div>
               </li>
             )

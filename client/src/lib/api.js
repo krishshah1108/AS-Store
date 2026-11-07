@@ -31,7 +31,7 @@ async function api(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : null
   } catch {
-    data = { message: text }
+    data = { message: '' }
   }
 
   if (!res.ok) {
@@ -40,7 +40,14 @@ async function api(path, options = {}) {
       localStorage.removeItem('as_store_user')
       window.dispatchEvent(new CustomEvent('as-store:unauthorized'))
     }
-    const error = new Error(data?.message || 'Request failed')
+    const raw = String(data?.message || text || '').trim()
+    const friendly =
+      /<!DOCTYPE|<html|Cannot GET|Cannot POST/i.test(raw) || raw.length > 180
+        ? res.status === 404
+          ? 'This page could not reach the shop server. Try again in a moment.'
+          : 'The shop server did not respond correctly. Try again in a moment.'
+        : raw || 'Request failed'
+    const error = new Error(friendly)
     error.status = res.status
     throw error
   }

@@ -1,4 +1,4 @@
-import { ArrowLeft, FloppyDisk, Plus, Trash, WhatsappLogo } from '@phosphor-icons/react'
+import { ArrowLeft, Eye, FloppyDisk, Plus, Trash, WhatsappLogo } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
@@ -366,22 +366,18 @@ export default function BillForm() {
 
       {isNew && lastBill && (
         <section className="panel last-bill no-print" aria-label="Previous bill">
-          <div className="last-bill-copy">
+          <Link className="last-bill-copy" to={`/bills/${lastBill._id}`}>
             <p className="last-bill-kicker">Previous bill</p>
-            <h2>
-              <Link to={`/bills/${lastBill._id}`}>{lastBill.billNo}</Link>
-            </h2>
+            <h2>{lastBill.billNo}</h2>
             <p className="muted">
               {lastBill.customerId?.name || 'Customer'} · {formatDate(lastBill.billDate)} ·{' '}
               {formatMoney(lastBill.total)}
             </p>
-          </div>
+          </Link>
           <div className="row-actions">
-            <Link className="btn primary" to={`/bills/${lastBill._id}`}>
-              Open bill
-            </Link>
-            <Link className="btn ghost" to={`/ledger/${lastBill.customerId?._id || lastBill.customerId}`}>
-              Ledger
+            <Link className="btn ghost" to={`/bills/${lastBill._id}`} aria-label="Open bill">
+              <Eye size={16} weight="bold" />
+              Open
             </Link>
             <button type="button" className="btn ghost" onClick={() => openWhatsAppShare(lastBill, settings)}>
               <WhatsappLogo size={16} weight="bold" />

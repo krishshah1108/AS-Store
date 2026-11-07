@@ -1287,7 +1287,15 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   border-color: #cfe3de;
   background: linear-gradient(180deg, #f4faf8 0%, #fff 100%);
 }
-.last-bill-copy { display: grid; gap: 2px; min-width: 0; }
+.last-bill-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 220px;
+  color: inherit;
+  border-radius: var(--radius-sm);
+}
+.last-bill-copy:hover h2 { color: var(--color-primary-hover); }
 .last-bill-kicker {
   margin: 0;
   color: var(--color-primary);
@@ -1296,8 +1304,7 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.last-bill h2 { margin: 0; }
-.last-bill h2 a { color: var(--color-primary); }
+.last-bill h2 { margin: 0; color: var(--color-primary); }
 .last-bill .muted { margin: 0; }
 .last-bill .row-actions { width: auto; }
 
@@ -1404,8 +1411,6 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
   color: var(--color-text-muted);
   font-size: 0.9rem;
 }
-.bill-view-actions { flex-wrap: wrap; }
-
 .pay-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .pay-quick button {
   min-height: 40px;
@@ -1582,18 +1587,31 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 .invoice-money .is-due { color: var(--color-accent); }
 .invoice-actions {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.invoice-actions-row {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+.invoice-actions-icons .invoice-icon,
+.invoice-actions-share .invoice-icon {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+.invoice-actions-primary > * {
+  flex: 1 1 0;
+  justify-content: center;
 }
 .invoice-pay,
 .invoice-return {
   min-height: 40px;
   padding-inline: 12px;
 }
-.invoice-pay { flex: 1 1 auto; }
-.invoice-return span { display: none; }
 .invoice-icon {
   flex: none;
   width: 40px;
@@ -1615,11 +1633,6 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 .invoice-icon.is-danger { color: var(--color-error); }
 .invoice-icon.is-danger:hover { background: var(--color-error-soft); border-color: #e7b4b4; }
 
-@media (max-width: 479px) {
-  .invoice-actions { flex-wrap: wrap; }
-  .invoice-pay { flex: 1 0 100%; }
-}
-
 @media (min-width: 768px) {
   .invoice-card {
     grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.9fr);
@@ -1634,13 +1647,21 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
     padding-top: 0;
   }
   .invoice-actions {
-    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
     padding-top: 10px;
     border-top: 1px solid var(--color-divider);
   }
-  .invoice-pay { flex: 0 1 auto; }
-  .invoice-return span { display: inline; }
+  .invoice-actions-row { display: contents; }
+  .invoice-actions-icons .invoice-icon,
+  .invoice-actions-share .invoice-icon {
+    flex: none;
+    width: 40px;
+  }
+  .invoice-actions-primary > * { flex: none; }
 }
 
 @media (min-width: 1200px) {
@@ -1918,5 +1939,4 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
     border: 0;
     padding: 0;
   }
-  .bill-view-actions { display: none !important; }
 }
