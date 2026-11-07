@@ -4,7 +4,6 @@ const ACTION_SUMMARY = {
   return: 'Recorded a return',
   delete: 'Deleted the bill',
   collect: 'Recorded a payment on the bill',
-  cancel: 'Cancelled the bill',
 }
 
 const FIELDS = [

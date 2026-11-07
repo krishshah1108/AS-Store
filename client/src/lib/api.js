@@ -35,6 +35,11 @@ async function api(path, options = {}) {
   }
 
   if (!res.ok) {
+    if (res.status === 401 && !path.startsWith('/api/auth/login')) {
+      localStorage.removeItem('as_store_token')
+      localStorage.removeItem('as_store_user')
+      window.dispatchEvent(new CustomEvent('as-store:unauthorized'))
+    }
     const error = new Error(data?.message || 'Request failed')
     error.status = res.status
     throw error

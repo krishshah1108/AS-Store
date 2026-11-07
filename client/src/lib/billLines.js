@@ -1,4 +1,4 @@
-function blankBillLine() {
+export function blankBillLine() {
   return { productId: '', name: '', qty: 1, rate: '' }
 }
 

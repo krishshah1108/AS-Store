@@ -12,7 +12,6 @@ const productRoutes = require('./routes/products');
 const settingsRoutes = require('./routes/settings');
 const syncRoutes = require('./routes/sync');
 const billRoutes = require('./routes/bills');
-const paymentRoutes = require('./routes/payments');
 const ledgerRoutes = require('./routes/ledger');
 const reportRoutes = require('./routes/reports');
 
@@ -39,7 +38,6 @@ async function start() {
   app.use('/api/settings', settingsRoutes);
   app.use('/api/sync', syncRoutes);
   app.use('/api/bills', billRoutes);
-  app.use('/api/payments', paymentRoutes);
   app.use('/api/ledger', ledgerRoutes);
   app.use('/api/reports', reportRoutes);
 

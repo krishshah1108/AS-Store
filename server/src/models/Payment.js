@@ -13,10 +13,10 @@ const paymentSchema = new mongoose.Schema(
     paymentNo: { type: String, required: true, unique: true },
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
     paymentDate: { type: Date, required: true },
-    kind: { type: String, enum: ['collection', 'refund'], required: true },
+    kind: { type: String, enum: ['collection'], default: 'collection', required: true },
     method: {
       type: String,
-      enum: ['cash', 'upi', 'mixed', 'credit_adjustment'],
+      enum: ['cash', 'upi', 'mixed'],
       default: 'cash',
     },
     amounts: {
@@ -24,9 +24,7 @@ const paymentSchema = new mongoose.Schema(
       upi: { type: Number, default: 0, min: 0 },
     },
     totalAmount: { type: Number, required: true, min: 0 },
-    allocationMode: { type: String, enum: ['fifo', 'manual', 'none'], default: 'fifo' },
     allocations: [allocationSchema],
-    advanceDelta: { type: Number, default: 0 },
     notes: { type: String, default: '' },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },

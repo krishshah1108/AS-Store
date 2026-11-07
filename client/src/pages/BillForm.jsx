@@ -15,16 +15,9 @@ import LogoLoader from '../components/LogoLoader'
 import SearchSelect from '../components/SearchSelect'
 import { billsApi, customersApi, productsApi, settingsApi } from '../lib/api'
 import { formatDate, formatMoney, openWhatsAppShare, todayInput } from '../lib/billShare'
-import { placeBillProduct } from '../lib/billLines'
+import { blankBillLine, placeBillProduct } from '../lib/billLines'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
-
-const emptyItem = () => ({
-  productId: '',
-  name: '',
-  qty: 1,
-  rate: '',
-})
 
 export default function BillForm() {
   const { id } = useParams()
@@ -38,7 +31,7 @@ export default function BillForm() {
   const [settings, setSettings] = useState({})
   const [customerId, setCustomerId] = useState('')
   const [billDate, setBillDate] = useState(todayInput())
-  const [items, setItems] = useState([emptyItem()])
+  const [items, setItems] = useState([blankBillLine()])
   const [discount, setDiscount] = useState(0)
   const [cash, setCash] = useState(0)
   const [upi, setUpi] = useState(0)
@@ -60,12 +53,16 @@ export default function BillForm() {
 
   useEffect(() => {
     let active = true
-    Promise.all([customersApi.list(), productsApi.list(), settingsApi.get()])
+    Promise.all([
+      customersApi.list(),
+      productsApi.list(),
+      settingsApi.get().catch(() => ({})),
+    ])
       .then(([c, p, s]) => {
         if (!active) return
-        setCustomers(c.filter((x) => x.isActive !== false))
+        setCustomers(c)
         setProducts(p.filter((x) => x.isActive !== false))
-        setSettings(s)
+        setSettings(s || {})
       })
       .catch((err) => {
         if (active) toast.error(err.message)
@@ -85,12 +82,19 @@ export default function BillForm() {
     }
     let active = true
     setBillReady(false)
-    Promise.all([billsApi.get(id), billsApi.payments(id)])
-      .then(([bill, paymentData]) => {
+    billsApi
+      .get(id)
+      .then((bill) => {
         if (!active) return
         setBillMeta(bill)
-        setBillPayments(paymentData.payments || [])
-        setCustomerId(bill.customerId?._id || bill.customerId)
+        const selectedId = String(bill.customerId?._id || bill.customerId || '')
+        setCustomerId(selectedId)
+        if (bill.customerId?._id && bill.customerId?.name) {
+          setCustomers((list) => {
+            if (list.some((row) => String(row._id) === selectedId)) return list
+            return [...list, bill.customerId]
+          })
+        }
         setBillDate(new Date(bill.billDate).toISOString().slice(0, 10))
         const lockedBill = bill.status === 'cancelled' || bill.status === 'returned'
         setItems([
@@ -100,7 +104,7 @@ export default function BillForm() {
             qty: item.qty,
             rate: item.rate,
           })),
-          ...(lockedBill ? [] : [emptyItem()]),
+          ...(lockedBill ? [] : [blankBillLine()]),
         ])
         setDiscount(bill.discount || 0)
         setCash(bill.payments?.cash || 0)
@@ -117,6 +121,16 @@ export default function BillForm() {
       .finally(() => {
         if (active) setBillReady(true)
       })
+
+    billsApi
+      .payments(id)
+      .then((paymentData) => {
+        if (active) setBillPayments(paymentData.payments || [])
+      })
+      .catch(() => {
+        if (active) setBillPayments([])
+      })
+
     return () => {
       active = false
     }
@@ -142,7 +156,9 @@ export default function BillForm() {
   const upiOn = upiPaid > 0.009
   const creditOn = hasDue
 
-  const customerOptions = customers.filter((c) => c.isActive !== false || c._id === customerId)
+  const customerOptions = customers.filter(
+    (c) => c.isActive !== false || String(c._id) === String(customerId || '')
+  )
   const productOptions = products.filter((p) => p.isActive !== false)
 
   function updateItem(index, patch) {
@@ -262,7 +278,7 @@ export default function BillForm() {
   }
 
   function addLine() {
-    setItems((prev) => [...prev, emptyItem()])
+    setItems((prev) => [...prev, blankBillLine()])
   }
 
   function removeItem(index) {
@@ -272,7 +288,7 @@ export default function BillForm() {
   function blankBill() {
     setCustomerId('')
     setBillDate(todayInput())
-    setItems([emptyItem()])
+    setItems([blankBillLine()])
     setDiscount(0)
     setCash(0)
     setUpi(0)
@@ -332,7 +348,7 @@ export default function BillForm() {
       bump()
       toast.success(isNew ? 'Bill saved' : 'Bill updated')
       if (isNew) {
-        const customer = customers.find((item) => item._id === customerId)
+        const customer = customers.find((item) => String(item._id) === String(customerId))
         setLastBill({
           ...bill,
           customerId: customer
@@ -810,34 +826,6 @@ export default function BillForm() {
             <ArrowUUpLeft size={16} weight="bold" />
             Process return
           </button>
-        </section>
-      )}
-
-      {!isNew && billMeta?.revisions?.length > 0 && (
-        <section className="panel table-wrap no-print">
-          <h2>Edit history</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>By</th>
-                <th>Reason</th>
-                <th>Before total</th>
-                <th>After total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...billMeta.revisions].reverse().map((rev, i) => (
-                <tr key={i}>
-                  <td>{formatDate(rev.at)}</td>
-                  <td>{rev.by?.name || '—'}</td>
-                  <td>{rev.reason || '—'}</td>
-                  <td>{formatMoney(rev.before?.total)}</td>
-                  <td>{formatMoney(rev.after?.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </section>
       )}
 

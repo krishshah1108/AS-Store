@@ -84,7 +84,6 @@ export default function Settings() {
       <header className="page-header">
         <div>
           <h1>Settings</h1>
-          <p className="muted">Shop name, phone, UPI, and the note printed on bills.</p>
         </div>
       </header>
 

@@ -25,7 +25,6 @@ const ACTION_LABEL = {
   return: 'Return',
   delete: 'Deleted',
   collect: 'Payment',
-  cancel: 'Cancelled',
 }
 
 const MONEY_FIELDS = new Set([

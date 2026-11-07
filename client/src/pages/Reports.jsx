@@ -42,7 +42,6 @@ export default function Reports() {
       <header className="page-header">
         <div>
           <h1>Reports</h1>
-          <p className="muted">Sales, cash, and credit for the selected dates. Record payments from the bill.</p>
         </div>
         <form className="range-form" onSubmit={(event) => event.preventDefault()}>
           <label>

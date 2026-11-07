@@ -566,8 +566,8 @@ input, textarea, select, .search {
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   padding: 0 var(--space-3);
-  font-size: 16px;
-}
+    font-size: 16px;
+  }
 textarea { padding: var(--space-3); min-height: 88px; resize: vertical; }
 input:focus, textarea:focus, select:focus, .search:focus {
   outline: 2px solid var(--color-primary-soft);
@@ -994,6 +994,38 @@ th { color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; lette
 }
 .modal .row-actions { width: 100%; }
 .modal .row-actions .btn { flex: 1; }
+
+.logout-modal {
+  width: min(100%, 360px);
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 12px 40px rgba(26, 33, 30, 0.12);
+}
+.logout-modal-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.logout-modal-copy {
+  display: grid;
+  gap: var(--space-2);
+}
+.logout-modal-copy h2 { margin: 0; }
+.logout-modal-copy .muted {
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.logout-modal .row-actions {
+  margin-top: var(--space-1);
+  gap: var(--space-2);
+}
 
 .activity-modal { width: min(100%, 480px); }
 .activity-list {

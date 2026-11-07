@@ -32,6 +32,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY) && !readStoredUser()))
 
   useEffect(() => {
+    function onUnauthorized() {
+      clearSession()
+      setUser(null)
+      setLoading(false)
+    }
+    window.addEventListener('as-store:unauthorized', onUnauthorized)
+    return () => window.removeEventListener('as-store:unauthorized', onUnauthorized)
+  }, [])
+
+  useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
     if (!token) {
       setLoading(false)

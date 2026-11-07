@@ -323,16 +323,22 @@ export default function Layout() {
       {confirmLogout && (
         <div className="modal-backdrop" onClick={() => setConfirmLogout(false)}>
           <div
-            className="modal"
+            className="modal logout-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="logout-title"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="logout-title">Log out?</h2>
+            <div className="logout-modal-icon" aria-hidden="true">
+              <SignOut size={28} weight="bold" />
+            </div>
+            <div className="logout-modal-copy">
+              <h2 id="logout-title">Log out?</h2>
+              <p className="muted">You can sign back in anytime with your mobile number.</p>
+            </div>
             <div className="row-actions">
               <button type="button" className="btn ghost" onClick={() => setConfirmLogout(false)}>
-                Stay
+                Stay signed in
               </button>
               <button type="button" className="btn primary" onClick={confirmSignOut}>
                 <SignOut size={16} weight="bold" />
