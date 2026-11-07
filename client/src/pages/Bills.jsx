@@ -16,6 +16,7 @@ import Breadcrumbs from '../components/Breadcrumbs'
 import LogoLoader from '../components/LogoLoader'
 import { billsApi, settingsApi } from '../lib/api'
 import { downloadBill, formatDate, formatDateTime, formatMoney, openWhatsAppShare } from '../lib/billShare'
+import { useAuth } from '../context/AuthContext'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
@@ -52,7 +53,15 @@ function showChange(field, value) {
 
 export default function Bills() {
   const { refreshKey, bump } = useSync()
+  const { user } = useAuth()
   const toast = useToast()
+
+  function creatorName(row) {
+    if (row.createdBy?.name) return row.createdBy.name
+    const id = String(row.createdBy?._id || row.createdBy || '')
+    if (id && id === String(user?.id || '')) return user.name
+    return 'Unknown'
+  }
   const [rows, setRows] = useState([])
   const [settings, setSettings] = useState({})
   const [q, setQ] = useState('')
@@ -191,7 +200,7 @@ export default function Bills() {
                     <span className={`invoice-status is-${tone}`}>{status}</span>
                   </div>
                   <p>{row.customerId?.name || '—'}</p>
-                  <p className="muted">Created by {row.createdBy?.name || 'Unknown'}</p>
+                  <p className="muted">Created by {creatorName(row)}</p>
                   <time dateTime={row.billDate}>{formatDate(row.billDate)}</time>
                 </div>
                 <dl className="invoice-money">

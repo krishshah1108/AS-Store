@@ -23,6 +23,14 @@ function isBillId(id) {
   return /^[a-f\d]{24}$/i.test(String(id || ''));
 }
 
+async function presentBill(id) {
+  return Bill.findById(id)
+    .select('-revisions')
+    .populate('customerId', 'name mobile')
+    .populate('createdBy', 'name')
+    .populate('updatedBy', 'name');
+}
+
 async function withCustomerNames(before, after) {
   const changes = billChanges(before, after);
   const customer = changes.find((change) => change.field === 'customerId');
@@ -112,10 +120,7 @@ async function createBillPayment(req, res) {
       req.user._id
     );
     emitChange();
-    const populated = await Bill.findById(result.bill._id)
-      .select('-revisions')
-      .populate('customerId', 'name mobile')
-      .populate('createdBy', 'name');
+    const populated = await presentBill(result.bill._id);
     res.status(201).json({
       bill: populated,
       payments: await listBillPayments(populated),
@@ -129,12 +134,7 @@ async function getBillById(req, res) {
   if (!isBillId(req.params.id)) {
     return res.status(404).json({ message: 'Bill not found' });
   }
-  const bill = await Bill.findById(req.params.id)
-    .select('-revisions')
-    .populate('customerId', 'name mobile')
-    .populate('createdBy', 'name')
-    .populate('updatedBy', 'name');
-
+  const bill = await presentBill(req.params.id);
   if (!bill) return res.status(404).json({ message: 'Bill not found' });
   res.json(bill);
 }
@@ -185,7 +185,7 @@ async function createBill(req, res) {
 
     emitChange();
 
-    res.status(201).json(bill);
+    res.status(201).json(await presentBill(bill._id));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -262,12 +262,7 @@ async function updateBill(req, res) {
     });
 
     emitChange();
-
-    const populated = await Bill.findById(bill._id)
-      .select('-revisions')
-      .populate('customerId', 'name mobile');
-
-    res.json(populated);
+    res.json(await presentBill(bill._id));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -310,10 +305,7 @@ async function returnBill(req, res) {
       performedBy: req.user._id,
     });
     emitChange();
-    const populated = await Bill.findById(result.bill._id)
-      .select('-revisions')
-      .populate('customerId', 'name mobile');
-    res.json(populated);
+    res.json(await presentBill(result.bill._id));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

@@ -16,6 +16,7 @@ import SearchSelect from '../components/SearchSelect'
 import { billsApi, customersApi, productsApi, settingsApi } from '../lib/api'
 import { formatDate, formatMoney, openWhatsAppShare, todayInput } from '../lib/billShare'
 import { blankBillLine, placeBillProduct } from '../lib/billLines'
+import { useAuth } from '../context/AuthContext'
 import { useSync } from '../context/SyncContext'
 import { useToast } from '../context/ToastContext'
 
@@ -24,6 +25,7 @@ export default function BillForm() {
   const { hash } = useLocation()
   const isNew = !id || id === 'new'
   const { bump, online } = useSync()
+  const { user } = useAuth()
   const toast = useToast()
 
   const [customers, setCustomers] = useState([])
@@ -476,7 +478,13 @@ export default function BillForm() {
           </Link>
           <h1>{isNew ? 'Add bill' : billMeta?.billNo || 'Edit bill'}</h1>
           {!isNew && billMeta && (
-            <p className="muted">Created by {billMeta.createdBy?.name || 'Unknown'}</p>
+            <p className="muted">
+              Created by{' '}
+              {billMeta.createdBy?.name ||
+                (String(billMeta.createdBy?._id || billMeta.createdBy) === String(user?.id)
+                  ? user.name
+                  : 'Unknown')}
+            </p>
           )}
         </div>
         {!isNew && billMeta && (
